@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Forever Roster">
 <meta property="og:title" content="Forever Roster ⚔ WoW Forever guild sign-up">
 <meta property="og:description" content="Sign up with your main, mark the nights you can play, and RSVP to dungeon and raid nights. Launch Nov 4.">
-<meta property="og:image" content="https://jaanbot.github.io/forever-roster/og.png">
+<meta property="og:image" content="https://jaanbot.github.io/wow-forever/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -65,7 +65,23 @@
 
   /* Hero banner: painted on a canvas at load */
   .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); margin-bottom: 24px; }
-  .hero canvas { display: block; width: 100%; height: 300px; }
+  .hero .bg { display: block; width: 100%; height: 340px; object-fit: cover; object-position: center 40%; filter: saturate(.9); }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,6,12,.15) 0%, rgba(8,6,12,.35) 45%, rgba(10,8,6,.88) 100%); pointer-events: none; }
+  .hero header, .hero .frame { z-index: 2; }
+  .hero .logo { width: 150px; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.8)); margin-bottom: 6px; }
+  @media (max-width: 640px) { .hero .bg { height: 420px; } .hero .logo { width: 110px; } }
+  .icon { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(0,0,0,.5); box-shadow: 0 0 0 1px rgba(217,164,65,.35); vertical-align: -8px; margin-right: 8px; object-fit: cover; }
+  .icon.sm { width: 18px; height: 18px; vertical-align: -4px; margin-right: 5px; }
+  .crest-img { width: 18px; height: 18px; border-radius: 3px; vertical-align: -4px; margin-right: 5px; border: 1px solid rgba(0,0,0,.5); }
+  .zone { width: 120px; height: 68px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,.35); margin-top: 8px; display: block; }
+  .chip img.icon { width: 22px; height: 22px; margin-right: 2px; vertical-align: middle; }
+  .chip.picked img.icon { box-shadow: 0 0 0 1px var(--gold); }
+  .shots { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .shots:empty { display: none; }
+  .shots figure { margin: 0; font-size: 12px; color: var(--muted); }
+  .shots img { width: 180px; aspect-ratio: 16/9; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); display: block; }
+  .credit { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: center; line-height: 1.6; }
+  .credit a { color: var(--gold); }
   .hero .frame { position: absolute; inset: 8px; border: 1px solid rgba(217,164,65,.45); pointer-events: none; border-radius: 3px; }
   .hero .frame::before, .hero .frame::after, .hero .frame i::before, .hero .frame i::after { content: ""; position: absolute; width: 22px; height: 22px; border: 2px solid var(--gold); }
   .hero .frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
@@ -78,7 +94,7 @@
   header p { margin: 8px 0 0; color: #e8dcc0; max-width: 58ch; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
   header .date { background: rgba(14,12,9,.7); border-color: rgba(217,164,65,.5); color: #f2e6c8; backdrop-filter: blur(3px); }
   header .date .display { color: #f0c458; } header .date small { color: #b9ab8c; } header .date .sub { color: #cfc2a3; }
-  @media (max-width: 640px) { .hero canvas { height: 380px; } header { padding: 18px; } }
+  @media (max-width: 640px) { header { padding: 18px; } }
 
   /* Parchment grain + gold corner ornaments on panels */
   .panel { position: relative; }
@@ -243,11 +259,12 @@
 <div class="wrap">
   <div class="setup" id="setup" hidden>This page isn't connected to its Google Sheet yet. Deploy <code>backend/Code.gs</code> as a web app and paste the <code>/exec</code> URL into <code>API_URL</code> at the top of the script in <code>index.html</code>.</div>
   <div class="hero">
-  <canvas id="sky" aria-hidden="true"></canvas>
+  <img class="bg" src="img/hero/Zones_Hyjal_032.jpg" alt="" aria-hidden="true">
   <div class="frame"><i></i></div>
   <header>
     <div>
-      <div class="eyebrow">World of Warcraft Forever · Classic+</div>
+      <img class="logo" src="img/hero/logo.png" alt="World of Warcraft Forever">
+      <div class="eyebrow">Classic+ · Guild sign-up</div>
       <h1>Forever Roster</h1>
       <p>Sign up with your main, mark the nights you can play, and RSVP to the runs. Everyone who opens this page sees the same sheet.</p>
     </div>
@@ -350,6 +367,7 @@
       </div>
     </section>
   </div>
+  <p class="credit">Fan-made, non-commercial. World of Warcraft, Warcraft and Blizzard Entertainment are trademarks of Blizzard Entertainment, Inc. Artwork and icons &copy; Blizzard Entertainment; icons via Wowhead; screenshots via <a href="https://warcraft.wiki.gg/wiki/World_of_Warcraft:_Forever">Warcraft Wiki</a>.</p>
 </div>
 <div class="status" id="status"></div>
 
@@ -378,36 +396,11 @@ const POLL_MS = 12000;
     Druid:   G('<path d="M12 21c-4-4-8-7-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-4 7-8 11zM12 9v8"/>'),
   };
   const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const RACE_ICON = { Human:"human", Dwarf:"dwarf", "Night Elf":"nightelf", Gnome:"gnome", Orc:"orc", Undead:"undead", Tauren:"tauren", Troll:"troll" };
+  const clsIcon = (c) => CLASS_COLORS[c] ? `<img class="icon" src="img/class/${c.toLowerCase()}.jpg" alt="" title="${c}">` : "";
+  const raceIcon = (r) => RACE_ICON[r] ? `<img class="icon sm" src="img/race/${RACE_ICON[r]}.jpg" alt="">` : "";
+  const crestImg = (f) => `<img class="crest-img" src="img/faction/${f === "H" ? "horde" : "alliance"}.jpg" alt="${f === "H" ? "Horde" : "Alliance"}">`;
 
-  // ---- Hero: Mount Hyjal at night, painted on canvas ----
-  (function paintSky() {
-    const c = document.getElementById("sky"); if (!c) return;
-    const draw = () => {
-      const w = c.clientWidth, h = c.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
-      c.width = w * dpr; c.height = h * dpr; const x = c.getContext("2d"); x.scale(dpr, dpr);
-      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-      const sky = x.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, "#06070f"); sky.addColorStop(.55, "#141a33"); sky.addColorStop(1, "#3a2a2a"); x.fillStyle = sky; x.fillRect(0, 0, w, h);
-      for (let i = 0; i < 260; i++) { const r = rnd(); x.globalAlpha = .3 + rnd() * .7; x.fillStyle = r > .9 ? "#ffe9b0" : "#dfe8ff"; const s = rnd() < .08 ? 1.8 : 1; x.fillRect(rnd() * w, rnd() * h * .7, s, s); }
-      x.globalAlpha = 1;
-      // moon
-      const mx = w * .82, my = h * .28; const glow = x.createRadialGradient(mx, my, 6, mx, my, 90); glow.addColorStop(0, "rgba(240,196,88,.55)"); glow.addColorStop(1, "rgba(240,196,88,0)"); x.fillStyle = glow; x.fillRect(mx - 90, my - 90, 180, 180);
-      x.fillStyle = "#f6e7bd"; x.beginPath(); x.arc(mx, my, 16, 0, Math.PI * 2); x.fill();
-      x.fillStyle = "#1a1f3a"; x.beginPath(); x.arc(mx - 8, my - 5, 14, 0, Math.PI * 2); x.fill();
-      // mountain layers
-      const ridge = (base, amp, col, k) => { x.fillStyle = col; x.beginPath(); x.moveTo(0, h); let y = base; for (let px = 0; px <= w; px += 6) { y += (rnd() - .5) * amp; y = Math.max(base - amp * 4, Math.min(base + amp * 4, y)); x.lineTo(px, y + Math.sin(px / (w / k)) * amp * 2); } x.lineTo(w, h); x.closePath(); x.fill(); };
-      ridge(h * .62, 4, "#1d2340", 3); ridge(h * .72, 5, "#2a2438", 5); ridge(h * .84, 3, "#3b2b28", 7);
-      // Nordrassil, the World Tree, on the far peak
-      const tx = w * .3, ty = h * .62;
-      const tglow = x.createRadialGradient(tx, ty - 40, 5, tx, ty - 40, 140); tglow.addColorStop(0, "rgba(120,220,160,.35)"); tglow.addColorStop(1, "rgba(120,220,160,0)"); x.fillStyle = tglow; x.fillRect(tx - 140, ty - 180, 280, 280);
-      x.strokeStyle = "#0d1020"; x.lineCap = "round";
-      const branch = (bx, by, len, ang, wdt, depth) => { if (depth === 0 || len < 4) return; const ex = bx + Math.cos(ang) * len, ey = by + Math.sin(ang) * len; x.lineWidth = wdt; x.beginPath(); x.moveTo(bx, by); x.lineTo(ex, ey); x.stroke(); branch(ex, ey, len * .72, ang - .45 + rnd() * .2, wdt * .65, depth - 1); branch(ex, ey, len * .72, ang + .45 - rnd() * .2, wdt * .65, depth - 1); if (rnd() > .5) branch(ex, ey, len * .6, ang + (rnd() - .5) * .3, wdt * .5, depth - 1); };
-      branch(tx, ty + 10, h * .16, -Math.PI / 2, 9, 7);
-      x.fillStyle = "rgba(140,230,180,.9)"; seed = 99; for (let i = 0; i < 60; i++) { x.globalAlpha = .4 + rnd() * .6; x.beginPath(); x.arc(tx + (rnd() - .5) * 140, ty - 40 - rnd() * 120, .8 + rnd() * 1.4, 0, 7); x.fill(); } x.globalAlpha = 1;
-      // haze at the bottom so the text reads
-      const fog = x.createLinearGradient(0, h * .45, 0, h); fog.addColorStop(0, "rgba(10,8,6,0)"); fog.addColorStop(1, "rgba(10,8,6,.78)"); x.fillStyle = fog; x.fillRect(0, 0, w, h);
-    };
-    draw(); let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
-  })();
   const BETA = new Date("2026-09-17T00:00:00"), LAUNCH = new Date("2026-11-04T00:00:00");
 
   const $ = (s) => document.querySelector(s);
@@ -469,13 +462,13 @@ const POLL_MS = 12000;
     roster.forEach((r) => { const rs = rolesOf(r); main[rs[0]] = (main[rs[0]] || 0) + 1; rs.forEach((x) => { can[x] = (can[x] || 0) + 1; }); fx[r.faction] = (fx[r.faction] || 0) + 1; });
     const cell = (k) => `<span title="${main[k]} prefer ${k}, ${can[k]} can play it"><b>${main[k]}</b> ${k.toLowerCase()}${can[k] > main[k] ? ` <span class="sub">(+${can[k] - main[k]} can)</span>` : ""}</span>`;
     $("#comp").innerHTML = roster.length
-      ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}<span style="margin-left:auto"><span class="crest A">A</span><b>${fx.A}</b> · <span class="crest H">H</span><b>${fx.H}</b></span>`
+      ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}<span style="margin-left:auto">${crestImg("A")}<b>${fx.A}</b> · ${crestImg("H")}<b>${fx.H}</b></span>`
       : `<span>No one yet. Whoever signs up first picks the faction everyone else pretends they wanted.</span>`;
     if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Not connected to the sheet yet."}</td></tr>`; return; }
     tb.innerHTML = roster.map((r) => `
       <tr>
-        <td><div class="char"><span class="glyph" style="background:${CLASS_COLORS[r.cls] || "#999"}" title="${esc(r.cls)}">${GLYPHS[r.cls] || ""}</span>${esc(r.character)}</div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
-        <td>${esc(r.cls)}<div class="sub"><span class="crest ${r.faction === "A" ? "A" : "H"}">${r.faction === "A" ? "A" : "H"}</span>${esc(r.race)}</div></td>
+        <td><div class="char">${clsIcon(r.cls)}<span style="color:${CLASS_COLORS[r.cls] || "inherit"}">${esc(r.character)}</span></div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
+        <td>${esc(r.cls)}<div class="sub">${crestImg(r.faction)}${raceIcon(r.race)}${esc(r.race)}</div></td>
         <td><div class="roles">${rolesOf(r).map((x) => `<span class="r">${esc(x)}</span>`).join("")}</div>${r.time ? `<div class="sub">${esc(r.time)}</div>` : ""}</td>
         <td><div class="days">${DAYS.map((d) => `<span class="${(r.days || []).includes(d) ? "on" : ""}" title="${d}">${d[0]}</span>`).join("")}</div>${r.notes ? `<div class="sub">${esc(r.notes)}</div>` : ""}</td>
         <td><button class="del" data-del-roster="${r.id}" title="Remove ${esc(r.character)}">✕</button></td>
@@ -499,7 +492,7 @@ const POLL_MS = 12000;
       return `<div class="event ${past ? "past" : ""}">
         <div class="cal"><div class="m">${d.toLocaleString("en-US",{month:"short"})}</div><div class="d">${d.getDate()}</div><div class="w">${d.toLocaleString("en-US",{weekday:"short"})}</div></div>
         <div>
-          <h3>${esc(e.title)}<span class="kind">${esc(e.kind || "")}</span></h3>
+          <h3>${(() => { const d = DUNGEONS.find((x) => e.title.includes(x.name)); const src = d ? dIcon(d) : e.kind === "Raid" ? "img/dungeon/raid.jpg" : e.kind === "Dungeon" ? "img/dungeon/generic.jpg" : "img/dungeon/new.jpg"; return `<img class="icon sm" src="${src}" alt="">`; })()}${esc(e.title)}<span class="kind">${esc(e.kind || "")}</span></h3>
           <div class="meta">${e.time ? esc(e.time) : "Time TBD"}${e.notes ? ` · ${esc(e.notes)}` : ""}</div>
           <div class="rsvp">
             ${["yes","maybe","no"].map((v) => `<button class="${v} ${mine === v ? "on" : ""}" data-rsvp="${e.id}" data-v="${v}" ${me ? "" : "disabled"}>${v === "yes" ? "I'm in" : v === "maybe" ? "Maybe" : "Can't"}</button>`).join("")}
@@ -579,6 +572,9 @@ const POLL_MS = 12000;
   // Dungeon catalogue. Classic ranges are the usual "comfortable" ranges; Forever entries flagged new,
   // and est:true where Blizzard hasn't published a level range yet.
   const D = (name, lo, hi, o = {}) => ({ name, lo, hi, ...o });
+  const DICON = { "Ragefire Chasm":"rfc", "Deadmines":"deadmines", "Wailing Caverns":"wc", "Shadowfang Keep":"sfk", "The Stockade":"stockade", "Blackfathom Deeps":"bfd", "Gnomeregan":"gnomeregan", "Razorfen Kraul":"rfk", "Razorfen Downs":"rfd", "Uldaman":"uldaman", "Zul'Farrak":"zf", "Maraudon":"maraudon", "Sunken Temple":"st", "Blackrock Depths":"brd", "Dire Maul":"dm", "Lower Blackrock Spire":"lbrs", "Upper Blackrock Spire":"ubrs", "Scholomance":"scholo", "Stratholme":"strat", "Onyxia's Lair":"ony", "Molten Core":"mc", "Zul'Gurub":"zg" };
+  const DSHOT = { "Hall of Thanes":"Dungeon_HallOfThanes_053", "Lordaeron Ruins":"Dungeon_Lordaeron_048", "City of Dalaran":"Dungeon_Dalaran_074", "Explorer's League Dig":"Dungeon_ExcavationSite_055", "Drowned Troll Ruin":"Dungeon_DrownedCity_064", "Krol'dok Stronghold":"Dungeon_KrolDokStronghold_071", "Alcaz Island Prison":"Dungeon_AlcazPrison_066", "Shaper's Terrace":"Dungeon_ShaperTerrace_068", "Blackmaw Hold":"Dungeon_TimbermawHold_057", "Barrow Deeps":"Raid_BarrowDeeps_082", "Hyjal Summit":"Raid_Hyjal_086" };
+  const dIcon = (d) => `img/dungeon/${DICON[d.name] || (d.name.startsWith("Scarlet") ? "sm" : d.raid ? "raid" : d.isNew ? "new" : "generic")}.jpg`;
   const DUNGEONS = [
     D("Ragefire Chasm", 13, 18, { fac:"H" }),
     D("Hall of Thanes", 13, 18, { isNew:true, where:"under Ironforge" }),
@@ -620,17 +616,17 @@ const POLL_MS = 12000;
   ];
   // Level brackets with rough days-at-Steady-pace and where to quest.
   const BRACKETS = [
-    { id:"b01", lo:1,  hi:12, days:2, zones:"Starting zones · Zephras Isle (Skyborne)" },
-    { id:"b13", lo:13, hi:18, days:2, zones:"Westfall / Loch Modan / Darkshore · Barrens / Silverpine" },
-    { id:"b19", lo:19, hi:22, days:1.5, zones:"Redridge / Ashenvale · Stonetalon / Barrens" },
-    { id:"b23", lo:23, hi:28, days:2.5, zones:"Duskwood / Wetlands · Hillsbrad / Thousand Needles" },
-    { id:"b29", lo:29, hi:34, days:3, zones:"Stranglethorn / Desolace / Arathi" },
-    { id:"b35", lo:35, hi:40, days:3.5, zones:"Riverglades (new, 30–45) / Dustwallow / Badlands" },
-    { id:"b41", lo:41, hi:46, days:4, zones:"Riverglades / Tanaris / Feralas / Hinterlands" },
-    { id:"b47", lo:47, hi:52, days:4.5, zones:"Searing Gorge / Un'Goro / Felwood / Burning Steppes" },
-    { id:"b53", lo:53, hi:57, days:4.5, zones:"Winterspring / Western & Eastern Plaguelands / Silithus" },
-    { id:"b58", lo:58, hi:60, days:3, zones:"Mount Hyjal (new endgame zone) / Plaguelands" },
-    { id:"b60", lo:60, hi:60, days:0, zones:"Attunements, pre-raid BiS, then raids", raidWeek:true },
+    { id:"b01", lo:1,  hi:12, days:2, zones:"Starting zones · Zephras Isle (Skyborne)", art:"Zones_Zephras_050", cap:"Zephras Isle" },
+    { id:"b13", lo:13, hi:18, days:2, zones:"Westfall / Loch Modan / Darkshore · Barrens / Silverpine", art:"Camping_Players_064", cap:"Out in the world" },
+    { id:"b19", lo:19, hi:22, days:1.5, zones:"Redridge / Ashenvale · Stonetalon / Barrens", art:"Zones_Dalaran_021", cap:"Dalaran, reopened" },
+    { id:"b23", lo:23, hi:28, days:2.5, zones:"Duskwood / Wetlands · Hillsbrad / Thousand Needles", art:"Dungeon_ExcavationSite_055", cap:"Explorer's League Dig" },
+    { id:"b29", lo:29, hi:34, days:3, zones:"Stranglethorn / Desolace / Arathi", art:"Dungeon_DrownedCity_064", cap:"Drowned Troll Ruin" },
+    { id:"b35", lo:35, hi:40, days:3.5, zones:"Riverglades (new, 30–45) / Dustwallow / Badlands", art:"Zones_Riverglades_039", cap:"The Riverglades" },
+    { id:"b41", lo:41, hi:46, days:4, zones:"Riverglades / Tanaris / Feralas / Hinterlands", art:"Dungeon_KrolDokStronghold_071", cap:"Krol'dok Stronghold" },
+    { id:"b47", lo:47, hi:52, days:4.5, zones:"Searing Gorge / Un'Goro / Felwood / Burning Steppes", art:"Zones_Shendralas_024", cap:"Shen'dralas" },
+    { id:"b53", lo:53, hi:57, days:4.5, zones:"Winterspring / Western & Eastern Plaguelands / Silithus", art:"Dungeon_TimbermawHold_057", cap:"Blackmaw Hold" },
+    { id:"b58", lo:58, hi:60, days:3, zones:"Mount Hyjal (new endgame zone) / Plaguelands", art:"Zones_Hyjal_030", cap:"Mount Hyjal" },
+    { id:"b60", lo:60, hi:60, days:0, zones:"Attunements, pre-raid BiS, then raids", raidWeek:true, art:"Raid_Hyjal_086", cap:"Hyjal Summit" },
   ];
   const overlap = (d, b) => Math.min(d.hi, b.hi) - Math.max(d.lo, b.lo) + 1;
   const dungeonsFor = (b) => DUNGEONS.filter((d) => b.raidWeek ? d.raid : (!d.raid && overlap(d, b) >= 3));
@@ -654,12 +650,13 @@ const POLL_MS = 12000;
       const state = b.end < today ? "past" : (b.start <= today ? "now" : "");
       const opts = dungeonsFor(b);
       return `<div class="bracket ${state}" data-b="${b.id}">
-        <div class="lvl">${b.raidWeek ? "60" : `${b.lo}–${b.hi}`}<small><span class="when">${b.raidWeek ? fmt(b.start) + " →" : fmt(b.start) + (b.start.getTime() === b.end.getTime() ? "" : " – " + fmt(b.end))}</span></small></div>
+        <div class="lvl">${b.raidWeek ? "60" : `${b.lo}–${b.hi}`}<small><span class="when">${b.raidWeek ? fmt(b.start) + " →" : fmt(b.start) + (b.start.getTime() === b.end.getTime() ? "" : " – " + fmt(b.end))}</span></small>${b.art ? `<img class="zone" src="img/thumb/${b.art}.jpg" alt="" title="${esc(b.cap)}" loading="lazy">` : ""}</div>
         <div>
           <div class="zones"><b>${b.raidWeek ? "Endgame" : "Quest in"}:</b> ${esc(b.zones)}</div>
           <div class="chips">${opts.map((d) => `<button class="chip ${picks.includes(d.name) ? "picked" : ""} ${d.raid ? "raid" : ""}" data-pick="${b.id}" data-d="${esc(d.name)}" title="${d.where ? esc(d.where) : ""}">
-              ${d.fac ? `<span class="fac ${d.fac}">${d.fac}</span>` : ""}${esc(d.name)}<span class="rng">${d.raid ? d.raid + "-man" : d.lo + "–" + d.hi}</span>${d.isNew ? `<span class="tag">New</span>` : ""}${d.est ? `<span class="tag est">Est</span>` : ""}
+              <img class="icon" src="${dIcon(d)}" alt="" loading="lazy">${d.fac ? `<span class="fac ${d.fac}">${d.fac}</span>` : ""}${esc(d.name)}<span class="rng">${d.raid ? d.raid + "-man" : d.lo + "–" + d.hi}</span>${d.isNew ? `<span class="tag">New</span>` : ""}${d.est ? `<span class="tag est">Est</span>` : ""}
             </button>`).join("")}</div>
+          <div class="shots">${opts.filter((d) => picks.includes(d.name) && DSHOT[d.name]).map((d) => `<figure><img src="img/thumb/${DSHOT[d.name]}.jpg" alt="${esc(d.name)}" loading="lazy"><figcaption>${esc(d.name)}</figcaption></figure>`).join("")}</div>
           <div class="bracket-actions">
             <button data-sched="${b.id}" ${picks.length ? "" : "disabled"}>Add to schedule</button>
             <span class="picked-list">${picks.length ? "Planned: " + picks.map(esc).join(", ") : "Pick one or more dungeons to run in this bracket."}</span>
