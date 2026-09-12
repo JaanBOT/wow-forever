@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forever Roster</title>
+<meta name="description" content="Sign-up sheet, raid schedule, and leveling plan for our World of Warcraft Forever crew. Beta Sept 17, launch Nov 4.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Forever Roster">
+<meta property="og:title" content="Forever Roster ⚔ WoW Forever guild sign-up">
+<meta property="og:description" content="Sign up with your main, mark the nights you can play, and RSVP to dungeon and raid nights. Launch Nov 4.">
+<meta property="og:image" content="https://jaanbot.github.io/forever-roster/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#14110d">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1l2.2 6.2L21 8l-5 4.4L17.5 20 12 16.6 6.5 20 8 12.4 3 8l6.8-.8z' fill='%23d9a441'/></svg>">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  :root {
+    --bg: #ebe2cf;
+    --bg-deep: #e0d5bd;
+    --surface: #f7f1e3;
+    --line: #cbbc9c;
+    --ink: #2a2118;
+    --ink-2: #5e5140;
+    --muted: #8a7a62;
+    --gold: #a86f0e;
+    --gold-soft: rgba(168,111,14,.14);
+    --alliance: #1f4fa8;
+    --horde: #a5291f;
+    --ok: #2f7a3a;
+    --warn: #b0731a;
+    --shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 10px rgba(60,40,10,.12);
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14110d; --bg-deep: #0e0c09; --surface: #1f1a14; --line: #3a3126;
+      --ink: #eadfc7; --ink-2: #c3b596; --muted: #8a7c66;
+      --gold: #d9a441; --gold-soft: rgba(217,164,65,.14);
+      --alliance: #4e86e6; --horde: #d9463a; --ok: #5cb56a; --warn: #e0a24a;
+      --shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 18px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14110d; --bg-deep: #0e0c09; --surface: #1f1a14; --line: #3a3126;
+    --ink: #eadfc7; --ink-2: #c3b596; --muted: #8a7c66;
+    --gold: #d9a441; --gold-soft: rgba(217,164,65,.14);
+    --alliance: #4e86e6; --horde: #d9463a; --ok: #5cb56a; --warn: #e0a24a;
+    --shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 18px rgba(0,0,0,.45);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.5;
+    background-image: radial-gradient(1200px 400px at 50% -100px, var(--gold-soft), transparent 70%);
+  }
+  h1, h2, h3, .display { font-family: Cinzel, "Times New Roman", Georgia, serif; font-weight: 700; letter-spacing: .02em; text-wrap: balance; margin: 0; }
+  .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .14em; color: var(--gold); font-weight: 600; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* Hero banner: painted on a canvas at load */
+  .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); margin-bottom: 24px; }
+  .hero canvas { display: block; width: 100%; height: 300px; }
+  .hero .frame { position: absolute; inset: 8px; border: 1px solid rgba(217,164,65,.45); pointer-events: none; border-radius: 3px; }
+  .hero .frame::before, .hero .frame::after, .hero .frame i::before, .hero .frame i::after { content: ""; position: absolute; width: 22px; height: 22px; border: 2px solid var(--gold); }
+  .hero .frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+  .hero .frame::after { top: -2px; right: -2px; border-left: 0; border-bottom: 0; }
+  .hero .frame i::before { bottom: -2px; left: -2px; border-right: 0; border-top: 0; }
+  .hero .frame i::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+  header { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 28px 32px; color: #f2e6c8; }
+  header .eyebrow { color: #f0c458; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  header h1 { font-size: clamp(30px, 5vw, 54px); line-height: 1.05; background: linear-gradient(180deg, #fff1c4 0%, #f0c458 55%, #b8801a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 4px rgba(0,0,0,.7)); }
+  header p { margin: 8px 0 0; color: #e8dcc0; max-width: 58ch; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+  header .date { background: rgba(14,12,9,.7); border-color: rgba(217,164,65,.5); color: #f2e6c8; backdrop-filter: blur(3px); }
+  header .date .display { color: #f0c458; } header .date small { color: #b9ab8c; } header .date .sub { color: #cfc2a3; }
+  @media (max-width: 640px) { .hero canvas { height: 380px; } header { padding: 18px; } }
+
+  /* Parchment grain + gold corner ornaments on panels */
+  .panel { position: relative; }
+  .panel::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .22 0 0 0 .18 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>"); }
+  :root[data-theme="dark"] .panel::before { mix-blend-mode: screen; opacity: .25; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .panel::before { mix-blend-mode: screen; opacity: .25; } }
+  .panel > * { position: relative; }
+  .panel::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+    background:
+      linear-gradient(var(--gold), var(--gold)) top left / 14px 2px no-repeat, linear-gradient(var(--gold), var(--gold)) top left / 2px 14px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) top right / 14px 2px no-repeat, linear-gradient(var(--gold), var(--gold)) top right / 2px 14px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) bottom left / 14px 2px no-repeat, linear-gradient(var(--gold), var(--gold)) bottom left / 2px 14px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) bottom right / 14px 2px no-repeat, linear-gradient(var(--gold), var(--gold)) bottom right / 2px 14px no-repeat; opacity: .8; }
+
+  /* Section title flourish */
+  section > h2 { position: relative; padding-left: 34px; }
+  section > h2::before { content: ""; position: absolute; left: 0; top: 50%; width: 24px; height: 24px; transform: translateY(-55%); background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1l2.2 6.2L21 8l-5 4.4L17.5 20 12 16.6 6.5 20 8 12.4 3 8l6.8-.8z' fill='black'/></svg>") center / contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1l2.2 6.2L21 8l-5 4.4L17.5 20 12 16.6 6.5 20 8 12.4 3 8l6.8-.8z' fill='black'/></svg>") center / contain no-repeat; }
+  section > h2::after { content: ""; flex: 1; height: 1px; margin-left: 8px; background: linear-gradient(90deg, var(--gold), transparent); align-self: center; opacity: .6; }
+
+  /* Faction crests + class glyphs */
+  .crest { display: inline-grid; place-items: center; width: 22px; height: 24px; vertical-align: -6px; margin-right: 4px; color: #fff; font-family: Cinzel, serif; font-weight: 700; font-size: 12px; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); }
+  .crest.A { background: linear-gradient(180deg, #5a90f0, var(--alliance)); } .crest.H { background: linear-gradient(180deg, #e2604f, var(--horde)); }
+  .glyph { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; margin-right: 8px; vertical-align: -8px; border: 1px solid rgba(0,0,0,.35); box-shadow: 0 1px 2px rgba(0,0,0,.3) inset; }
+  .glyph svg { width: 16px; height: 16px; fill: none; stroke: #1a1207; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .dates { display: flex; gap: 14px; flex-wrap: wrap; }
+  .date { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; box-shadow: var(--shadow); min-width: 150px; }
+  .date .display { font-size: 24px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .date small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+
+  .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; margin-top: 28px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  section > h2 { font-size: 20px; margin-bottom: 12px; display: flex; align-items: baseline; gap: 12px; }
+  section > h2 .count { font-family: "Source Sans 3", sans-serif; font-weight: 400; font-size: 14px; color: var(--muted); }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .panel + .panel { margin-top: 16px; }
+
+  /* Roster table */
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  .tablewrap { overflow-x: auto; }
+  .char { font-weight: 600; }
+  .cls { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.25); }
+  .faction { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; color: #fff; }
+  .faction.A { background: var(--alliance); } .faction.H { background: var(--horde); } .faction.U { background: var(--muted); }
+  .days { display: flex; gap: 3px; }
+  .days span { font-size: 11px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+  .days span.on { background: var(--gold-soft); color: var(--gold); border-color: var(--gold); font-weight: 600; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+  .comp { display: flex; gap: 14px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+  .comp b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* Forms */
+  form { padding: 16px; display: grid; gap: 12px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 560px) { .row, .row.three { grid-template-columns: 1fr; } }
+  label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  input, select, textarea, button { font: inherit; color: var(--ink); }
+  input, select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; width: 100%; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  textarea { min-height: 56px; resize: vertical; }
+  .daypick { display: flex; gap: 6px; flex-wrap: wrap; }
+  .daypick label { flex-direction: row; display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 4px; padding: 5px 9px; cursor: pointer; font-weight: 400; background: var(--bg); }
+  .daypick input { width: auto; margin: 0; }
+  .rolepick button { font-weight: 400; padding: 5px 9px; display: inline-flex; align-items: center; gap: 6px; }
+  .rolepick button.on { border-color: var(--gold); background: var(--gold-soft); color: var(--gold); font-weight: 600; }
+  .rolepick button.on::before { content: attr(data-rank); display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); color: #1a1207; font-size: 11px; font-weight: 700; }
+  .roles { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .roles .r { font-size: 13px; }
+  .roles .r + .r::before { content: "›"; color: var(--muted); margin-right: 4px; }
+  .roles .r:first-child { font-weight: 600; }
+  .daypick label:has(input:checked) { border-color: var(--gold); background: var(--gold-soft); color: var(--gold); font-weight: 600; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 8px 14px; font-weight: 600; }
+  button.primary { background: var(--gold); border-color: var(--gold); color: #1a1207; }
+  button.primary:hover { filter: brightness(1.06); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .note { font-size: 13px; color: var(--muted); }
+  .toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; }
+  .toggle[aria-expanded="true"] { border-bottom-color: var(--line); }
+  .toggle h3 { font-size: 15px; }
+  .toggle .chev { color: var(--muted); transition: transform .2s; }
+  .toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  /* Events */
+  .who { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: 14px; }
+  .who select { width: auto; flex: 1; }
+  .event { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); }
+  .event:last-child { border-bottom: 0; }
+  .event.past { opacity: .55; }
+  .cal { text-align: center; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); align-self: start; padding: 4px 0 6px; }
+  .cal .m { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--gold); font-weight: 600; }
+  .cal .d { font-family: Cinzel, serif; font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .cal .w { font-size: 11px; color: var(--muted); }
+  .event h3 { font-size: 17px; }
+  .kind { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); font-weight: 600; margin-left: 8px; }
+  .meta { color: var(--ink-2); font-size: 14px; margin: 2px 0 8px; }
+  .rsvp { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .rsvp button { padding: 4px 10px; font-size: 13px; }
+  .rsvp button.on.yes { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .rsvp button.on.maybe { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .rsvp button.on.no { background: var(--muted); border-color: var(--muted); color: #fff; }
+  .tally { font-size: 13px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .names { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+  .names b { font-weight: 600; }
+  .del { color: var(--muted); font-size: 12px; background: none; border: 0; padding: 0 4px; }
+  .del:hover { color: var(--horde); }
+
+  .status { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 4px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .status.show { opacity: 1; }
+  .banner { padding: 10px 16px; font-size: 14px; color: var(--ink-2); background: var(--gold-soft); border-bottom: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; }
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-top: 20px; border-bottom: 1px solid var(--line); }
+  .tab { background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: 10px 16px; font-family: Cinzel, serif; font-weight: 700; font-size: 15px; color: var(--muted); letter-spacing: .02em; }
+  .tab[aria-selected="true"] { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab:hover { color: var(--ink); }
+
+  /* Leveling plan */
+  .plan-settings { display: flex; gap: 14px; flex-wrap: wrap; align-items: end; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .plan-settings label { min-width: 150px; }
+  .plan-settings .note { flex-basis: 100%; }
+  .bracket { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 16px; border-bottom: 1px solid var(--line); }
+  .bracket:last-child { border-bottom: 0; }
+  .bracket.past { opacity: .6; }
+  .bracket.now { background: var(--gold-soft); }
+  @media (max-width: 560px) { .bracket { grid-template-columns: 1fr; } }
+  .lvl { font-family: Cinzel, serif; font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .lvl small { display: block; font-family: "Source Sans 3", sans-serif; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .lvl .when { color: var(--gold); font-weight: 600; }
+  .zones { font-size: 14px; color: var(--ink-2); margin-bottom: 8px; }
+  .zones b { color: var(--ink); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 5px 9px; font-size: 13px; font-weight: 400; text-align: left; }
+  .chip .rng { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chip .tag { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; background: var(--gold); color: #1a1207; }
+  .chip .tag.est { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .chip .fac { font-size: 10px; font-weight: 700; color: #fff; padding: 1px 5px; border-radius: 3px; }
+  .chip .fac.A { background: var(--alliance); } .chip .fac.H { background: var(--horde); }
+  .chip.picked { border-color: var(--gold); background: var(--gold-soft); font-weight: 600; }
+  .chip.raid { border-style: dashed; }
+  .bracket-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .bracket-actions button { padding: 5px 11px; font-size: 13px; }
+  .picked-list { font-size: 13px; color: var(--ink-2); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 16px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .setup { margin: 0 0 20px; padding: 14px 16px; border: 1px dashed var(--gold); border-radius: var(--radius); background: var(--gold-soft); font-size: 14px; }
+  .setup code { background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+  html { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="setup" id="setup" hidden>This page isn't connected to its Google Sheet yet. Deploy <code>backend/Code.gs</code> as a web app and paste the <code>/exec</code> URL into <code>API_URL</code> at the top of the script in <code>index.html</code>.</div>
+  <div class="hero">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="frame"><i></i></div>
+  <header>
+    <div>
+      <div class="eyebrow">World of Warcraft Forever · Classic+</div>
+      <h1>Forever Roster</h1>
+      <p>Sign up with your main, mark the nights you can play, and RSVP to the runs. Everyone who opens this page sees the same sheet.</p>
+    </div>
+    <div class="dates">
+      <div class="date"><small>Beta opens</small><span class="display">Sep 17</span><span class="sub" id="cd-beta"></span></div>
+      <div class="date"><small>Launch</small><span class="display">Nov 4</span><span class="sub" id="cd-launch"></span></div>
+    </div>
+  </header>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="main">Roster &amp; Schedule</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="plan">Leveling Plan</button>
+  </nav>
+
+  <div id="tab-plan" hidden>
+    <section style="margin-top:24px">
+      <h2>Leveling &amp; dungeon plan <span class="count" id="planCount"></span></h2>
+      <div class="panel">
+        <div class="plan-settings">
+          <label>Launch / start date <input type="date" id="planStart" value="2026-11-04"></label>
+          <label>Pace <select id="planPace"><option value="1.6">Casual · ~9 weeks to 60</option><option value="1" selected>Steady · ~6 weeks to 60</option><option value="0.6">Sweaty · ~3.5 weeks to 60</option></select></label>
+          <span class="note">Dates are targets for when the group should be in each bracket. Click a dungeon to mark it as the one we'll run, then "Add to schedule" to put it on the calendar with RSVPs. Settings and picks are shared with everyone.</span>
+        </div>
+        <div class="legend"><span><span class="tag" style="background:var(--gold);color:#1a1207;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">NEW</span> added in Forever</span><span><span style="border:1px solid var(--line);padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">EST</span> level range not yet published; our guess</span><span>dashed = raid</span></div>
+        <div id="plan"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid" id="tab-main">
+    <section>
+      <h2>Roster <span class="count" id="rosterCount"></span></h2>
+      <div class="panel">
+        <div class="comp" id="comp"></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Character</th><th>Class · Race</th><th>Role</th><th>Nights</th><th></th></tr></thead>
+            <tbody id="roster"><tr><td colspan="5" class="empty">Loading the roster…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="toggle" id="signupToggle" role="button" tabindex="0" aria-expanded="true"><h3>Sign up</h3><span class="chev">▾</span></div>
+        <form id="signup">
+          <div class="row">
+            <label>Your name <input name="name" required placeholder="Who you are on Discord" maxlength="40"></label>
+            <label>Character name <input name="character" required placeholder="What we'll /invite" maxlength="24"></label>
+          </div>
+          <div class="row three">
+            <label>Faction <select name="faction" id="faction"><option value="A">Alliance</option><option value="H">Horde</option></select></label>
+            <label>Race <select name="race" id="race"></select></label>
+            <label>Class <select name="cls" id="cls"></select></label>
+          </div>
+          <div class="row">
+            <label>Roles, in order of preference
+              <div class="daypick rolepick" id="rolepick">
+                <button type="button" data-role="DPS">DPS</button>
+                <button type="button" data-role="Tank">Tank</button>
+                <button type="button" data-role="Healer">Healer</button>
+              </div>
+            </label>
+            <label>Usual time (your local) <input name="time" placeholder="e.g. 7–11pm CT" maxlength="40"></label>
+          </div>
+          <label>Nights you can play
+            <div class="daypick" id="daypick"></div>
+          </label>
+          <label>Notes <textarea name="notes" placeholder="Alt plans, professions you'll cover, Skyborne pack or not…" maxlength="240"></textarea></label>
+          <div class="actions">
+            <button class="primary" type="submit">Add me to the roster</button>
+            <span class="note" id="signupNote">Skyborne Elves: pick whichever faction Blizzard confirms; we'll fix it later.</span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <h2>Schedule <span class="count" id="eventCount"></span></h2>
+      <div class="panel">
+        <div class="who">
+          <span>RSVP as</span>
+          <select id="who"><option value="">— pick your roster entry —</option></select>
+        </div>
+        <div id="events"><div class="empty">Loading events…</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="toggle" id="eventToggle" role="button" tabindex="0" aria-expanded="false"><h3>Add an event</h3><span class="chev">▾</span></div>
+        <form id="addEvent" hidden>
+          <label>Title <input name="title" required placeholder="Deadmines run, Launch night, Onyxia attunement…" maxlength="60"></label>
+          <div class="row three">
+            <label>Date <input name="date" type="date" required></label>
+            <label>Time <input name="time" placeholder="8pm CT" maxlength="20"></label>
+            <label>Kind <select name="kind"><option>Leveling</option><option>Dungeon</option><option>Raid</option><option>PvP</option><option>Beta</option><option>Other</option></select></label>
+          </div>
+          <label>Notes <textarea name="notes" placeholder="Meet in Discord, bring consumes, who's leading…" maxlength="240"></textarea></label>
+          <div class="actions"><button class="primary" type="submit">Add event</button></div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="status" id="status"></div>
+
+<script>
+// Paste your Apps Script web app URL here (Deploy → Web app → URL ending in /exec).
+const API_URL = "";
+const POLL_MS = 12000;
+
+(() => {
+  // ---- Static game data (WoW Classic, plus the Forever race) ----
+  const CLASS_COLORS = { Warrior:"#C79C6E", Paladin:"#F58CBA", Hunter:"#ABD473", Rogue:"#FFF569", Priest:"#FFFFFF", Shaman:"#0070DE", Mage:"#69CCF0", Warlock:"#9482C9", Druid:"#FF7D0A" };
+  const RACES = {
+    A: { Human:["Warrior","Paladin","Rogue","Priest","Mage","Warlock"], Dwarf:["Warrior","Paladin","Hunter","Rogue","Priest"], "Night Elf":["Warrior","Hunter","Rogue","Priest","Druid"], Gnome:["Warrior","Rogue","Mage","Warlock"], "Skyborne Elf":Object.keys(CLASS_COLORS) },
+    H: { Orc:["Warrior","Hunter","Rogue","Shaman","Warlock"], Undead:["Warrior","Rogue","Priest","Mage","Warlock"], Tauren:["Warrior","Hunter","Shaman","Druid"], Troll:["Warrior","Hunter","Rogue","Priest","Shaman","Mage"], "Skyborne Elf":Object.keys(CLASS_COLORS) },
+  };
+  const G = (p) => `<svg viewBox="0 0 24 24">${p}</svg>`;
+  const GLYPHS = {
+    Warrior: G('<path d="M5 19l9-9M14 10l4-4 1-3-3 1-4 4M4 15l5 5M7 17l-3 3"/>'),
+    Paladin: G('<path d="M12 3v18M6 9h12M9 6h6"/>'),
+    Hunter:  G('<path d="M6 4c6 2 6 14 0 16M6 4l12 8L6 20M12 12h9"/>'),
+    Rogue:   G('<path d="M4 20l8-8M12 12l6-6 2-2-2 4-6 6M8 16l-2 2M16 20l-8-8M12 12l-6-6-2-2 2 4 6 6"/>'),
+    Priest:  G('<path d="M12 3l1.5 6.5L20 11l-6.5 1.5L12 19l-1.5-6.5L4 11l6.5-1.5z"/>'),
+    Shaman:  G('<path d="M13 3L6 13h5l-1 8 8-11h-5z"/>'),
+    Mage:    G('<path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2zM18 15l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/>'),
+    Warlock: G('<path d="M12 3a6 6 0 0 1 6 6c0 3-2 4-2 6H8c0-2-2-3-2-6a6 6 0 0 1 6-6zM9 18h6M10 21h4M9 10h.5M14.5 10h.5"/>'),
+    Druid:   G('<path d="M12 21c-4-4-8-7-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-4 7-8 11zM12 9v8"/>'),
+  };
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+  // ---- Hero: Mount Hyjal at night, painted on canvas ----
+  (function paintSky() {
+    const c = document.getElementById("sky"); if (!c) return;
+    const draw = () => {
+      const w = c.clientWidth, h = c.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+      c.width = w * dpr; c.height = h * dpr; const x = c.getContext("2d"); x.scale(dpr, dpr);
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const sky = x.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, "#06070f"); sky.addColorStop(.55, "#141a33"); sky.addColorStop(1, "#3a2a2a"); x.fillStyle = sky; x.fillRect(0, 0, w, h);
+      for (let i = 0; i < 260; i++) { const r = rnd(); x.globalAlpha = .3 + rnd() * .7; x.fillStyle = r > .9 ? "#ffe9b0" : "#dfe8ff"; const s = rnd() < .08 ? 1.8 : 1; x.fillRect(rnd() * w, rnd() * h * .7, s, s); }
+      x.globalAlpha = 1;
+      // moon
+      const mx = w * .82, my = h * .28; const glow = x.createRadialGradient(mx, my, 6, mx, my, 90); glow.addColorStop(0, "rgba(240,196,88,.55)"); glow.addColorStop(1, "rgba(240,196,88,0)"); x.fillStyle = glow; x.fillRect(mx - 90, my - 90, 180, 180);
+      x.fillStyle = "#f6e7bd"; x.beginPath(); x.arc(mx, my, 16, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#1a1f3a"; x.beginPath(); x.arc(mx - 8, my - 5, 14, 0, Math.PI * 2); x.fill();
+      // mountain layers
+      const ridge = (base, amp, col, k) => { x.fillStyle = col; x.beginPath(); x.moveTo(0, h); let y = base; for (let px = 0; px <= w; px += 6) { y += (rnd() - .5) * amp; y = Math.max(base - amp * 4, Math.min(base + amp * 4, y)); x.lineTo(px, y + Math.sin(px / (w / k)) * amp * 2); } x.lineTo(w, h); x.closePath(); x.fill(); };
+      ridge(h * .62, 4, "#1d2340", 3); ridge(h * .72, 5, "#2a2438", 5); ridge(h * .84, 3, "#3b2b28", 7);
+      // Nordrassil, the World Tree, on the far peak
+      const tx = w * .3, ty = h * .62;
+      const tglow = x.createRadialGradient(tx, ty - 40, 5, tx, ty - 40, 140); tglow.addColorStop(0, "rgba(120,220,160,.35)"); tglow.addColorStop(1, "rgba(120,220,160,0)"); x.fillStyle = tglow; x.fillRect(tx - 140, ty - 180, 280, 280);
+      x.strokeStyle = "#0d1020"; x.lineCap = "round";
+      const branch = (bx, by, len, ang, wdt, depth) => { if (depth === 0 || len < 4) return; const ex = bx + Math.cos(ang) * len, ey = by + Math.sin(ang) * len; x.lineWidth = wdt; x.beginPath(); x.moveTo(bx, by); x.lineTo(ex, ey); x.stroke(); branch(ex, ey, len * .72, ang - .45 + rnd() * .2, wdt * .65, depth - 1); branch(ex, ey, len * .72, ang + .45 - rnd() * .2, wdt * .65, depth - 1); if (rnd() > .5) branch(ex, ey, len * .6, ang + (rnd() - .5) * .3, wdt * .5, depth - 1); };
+      branch(tx, ty + 10, h * .16, -Math.PI / 2, 9, 7);
+      x.fillStyle = "rgba(140,230,180,.9)"; seed = 99; for (let i = 0; i < 60; i++) { x.globalAlpha = .4 + rnd() * .6; x.beginPath(); x.arc(tx + (rnd() - .5) * 140, ty - 40 - rnd() * 120, .8 + rnd() * 1.4, 0, 7); x.fill(); } x.globalAlpha = 1;
+      // haze at the bottom so the text reads
+      const fog = x.createLinearGradient(0, h * .45, 0, h); fog.addColorStop(0, "rgba(10,8,6,0)"); fog.addColorStop(1, "rgba(10,8,6,.78)"); x.fillStyle = fog; x.fillRect(0, 0, w, h);
+    };
+    draw(); let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(draw, 150); });
+  })();
+  const BETA = new Date("2026-09-17T00:00:00"), LAUNCH = new Date("2026-11-04T00:00:00");
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  let toastT; const toast = (m) => { const el = $("#status"); el.textContent = m; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2600); };
+
+  // countdowns
+  const daysTo = (d) => Math.ceil((d - new Date()) / 864e5);
+  const cd = (el, d) => { const n = daysTo(d); el.textContent = n > 1 ? `in ${n} days` : n === 1 ? "tomorrow" : n === 0 ? "today" : "live"; };
+  cd($("#cd-beta"), BETA); cd($("#cd-launch"), LAUNCH);
+
+  // form wiring: faction -> race -> class
+  const fac = $("#faction"), race = $("#race"), cls = $("#cls");
+  const fillRaces = () => { race.innerHTML = Object.keys(RACES[fac.value]).map((r) => `<option>${r}</option>`).join(""); fillClasses(); };
+  const fillClasses = () => { cls.innerHTML = RACES[fac.value][race.value].map((c) => `<option>${c}</option>`).join(""); };
+  fac.addEventListener("change", fillRaces); race.addEventListener("change", fillClasses); fillRaces();
+  $("#daypick").innerHTML = DAYS.map((d) => `<label><input type="checkbox" name="days" value="${d}">${d}</label>`).join("");
+
+  // ranked role picker: click in order of preference, click again to remove
+  let rolePicks = [];
+  const renderRolePicks = () => $("#rolepick").querySelectorAll("button").forEach((b) => { const i = rolePicks.indexOf(b.dataset.role); b.classList.toggle("on", i >= 0); b.dataset.rank = i >= 0 ? i + 1 : ""; });
+  $("#rolepick").addEventListener("click", (e) => { const b = e.target.closest("button[data-role]"); if (!b) return; rolePicks = rolePicks.includes(b.dataset.role) ? rolePicks.filter((r) => r !== b.dataset.role) : [...rolePicks, b.dataset.role]; renderRolePicks(); });
+  const rolesOf = (r) => Array.isArray(r.roles) && r.roles.length ? r.roles : (r.role && r.role !== "Flex" ? [r.role] : ["DPS","Tank","Healer"]);
+
+  // collapsible panels
+  for (const [tid, fid] of [["#signupToggle","#signup"],["#eventToggle","#addEvent"]]) {
+    const t = $(tid), f = $(fid);
+    const flip = () => { const open = t.getAttribute("aria-expanded") !== "true"; t.setAttribute("aria-expanded", String(open)); f.hidden = !open; };
+    t.addEventListener("click", flip); t.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+  }
+
+  // ---- State ----
+  let db = null, roster = [], events = [];
+
+  // ---- Google Sheet API (Apps Script web app) ----
+  // POST as text/plain keeps the request "simple" so Apps Script's redirect doesn't trip CORS preflight.
+  const api = {
+    async get() { const r = await fetch(API_URL, { cache: "no-store" }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); },
+    async post(action, payload) {
+      const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, ...payload }) });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error || "save failed"); return j;
+    },
+  };
+  function applySnapshot(s) {
+    if (!s) return;
+    roster = (s.roster || []).slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    events = s.events || [];
+    if (s.plan && s.plan.settings) { const d = s.plan.settings; plan = { start: d.start || plan.start, pace: Number(d.pace) || 1, picks: d.picks || {} }; }
+    renderRoster(); renderEvents(); if (typeof renderPlan === "function") renderPlan();
+  }
+  let me = ""; try { me = localStorage.getItem("forever.me") || ""; } catch {}
+
+  const rosterById = () => Object.fromEntries(roster.map((r) => [r.id, r]));
+
+  function renderRoster() {
+    const tb = $("#roster");
+    $("#rosterCount").textContent = roster.length ? `${roster.length} signed up` : "";
+    const main = { Tank:0, Healer:0, DPS:0 }, can = { Tank:0, Healer:0, DPS:0 }, fx = { A:0, H:0 };
+    roster.forEach((r) => { const rs = rolesOf(r); main[rs[0]] = (main[rs[0]] || 0) + 1; rs.forEach((x) => { can[x] = (can[x] || 0) + 1; }); fx[r.faction] = (fx[r.faction] || 0) + 1; });
+    const cell = (k) => `<span title="${main[k]} prefer ${k}, ${can[k]} can play it"><b>${main[k]}</b> ${k.toLowerCase()}${can[k] > main[k] ? ` <span class="sub">(+${can[k] - main[k]} can)</span>` : ""}</span>`;
+    $("#comp").innerHTML = roster.length
+      ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}<span style="margin-left:auto"><span class="crest A">A</span><b>${fx.A}</b> · <span class="crest H">H</span><b>${fx.H}</b></span>`
+      : `<span>No one yet. Whoever signs up first picks the faction everyone else pretends they wanted.</span>`;
+    if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Connecting to the shared roster…"}</td></tr>`; return; }
+    tb.innerHTML = roster.map((r) => `
+      <tr>
+        <td><div class="char"><span class="glyph" style="background:${CLASS_COLORS[r.cls] || "#999"}" title="${esc(r.cls)}">${GLYPHS[r.cls] || ""}</span>${esc(r.character)}</div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
+        <td>${esc(r.cls)}<div class="sub"><span class="crest ${r.faction === "A" ? "A" : "H"}">${r.faction === "A" ? "A" : "H"}</span>${esc(r.race)}</div></td>
+        <td><div class="roles">${rolesOf(r).map((x) => `<span class="r">${esc(x)}</span>`).join("")}</div>${r.time ? `<div class="sub">${esc(r.time)}</div>` : ""}</td>
+        <td><div class="days">${DAYS.map((d) => `<span class="${(r.days || []).includes(d) ? "on" : ""}" title="${d}">${d[0]}</span>`).join("")}</div>${r.notes ? `<div class="sub">${esc(r.notes)}</div>` : ""}</td>
+        <td><button class="del" data-del-roster="${r.id}" title="Remove ${esc(r.character)}">✕</button></td>
+      </tr>`).join("");
+    const who = $("#who");
+    who.innerHTML = `<option value="">— pick your roster entry —</option>` + roster.map((r) => `<option value="${r.id}" ${r.id === me ? "selected" : ""}>${esc(r.character)} (${esc(r.name)})</option>`).join("");
+    if (me && !roster.some((r) => r.id === me)) { me = ""; who.value = ""; }
+  }
+
+  function renderEvents() {
+    const box = $("#events"), by = rosterById();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const sorted = [...events].sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+    $("#eventCount").textContent = sorted.length ? `${sorted.filter((e) => new Date(e.date + "T12:00:00") >= today).length} upcoming` : "";
+    if (!sorted.length) { box.innerHTML = `<div class="empty">${db ? "Nothing scheduled. Add the first run." : "Connecting…"}</div>`; return; }
+    box.innerHTML = sorted.map((e) => {
+      const d = new Date(e.date + "T12:00:00"), past = d < today;
+      const rs = e.rsvps || {}, tally = { yes:[], maybe:[], no:[] };
+      for (const [id, v] of Object.entries(rs)) if (by[id] && tally[v]) tally[v].push(by[id].character);
+      const mine = me ? rs[me] : "";
+      return `<div class="event ${past ? "past" : ""}">
+        <div class="cal"><div class="m">${d.toLocaleString("en-US",{month:"short"})}</div><div class="d">${d.getDate()}</div><div class="w">${d.toLocaleString("en-US",{weekday:"short"})}</div></div>
+        <div>
+          <h3>${esc(e.title)}<span class="kind">${esc(e.kind || "")}</span></h3>
+          <div class="meta">${e.time ? esc(e.time) : "Time TBD"}${e.notes ? ` · ${esc(e.notes)}` : ""}</div>
+          <div class="rsvp">
+            ${["yes","maybe","no"].map((v) => `<button class="${v} ${mine === v ? "on" : ""}" data-rsvp="${e.id}" data-v="${v}" ${me ? "" : "disabled"}>${v === "yes" ? "I'm in" : v === "maybe" ? "Maybe" : "Can't"}</button>`).join("")}
+            <span class="tally">${tally.yes.length} in · ${tally.maybe.length} maybe</span>
+            <button class="del" data-del-event="${e.id}" title="Delete event">✕</button>
+          </div>
+          ${tally.yes.length || tally.maybe.length ? `<div class="names">${tally.yes.length ? `<b>In:</b> ${tally.yes.map(esc).join(", ")}` : ""}${tally.yes.length && tally.maybe.length ? " · " : ""}${tally.maybe.length ? `<b>Maybe:</b> ${tally.maybe.map(esc).join(", ")}` : ""}</div>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  renderRoster(); renderEvents();
+
+  // ---- Interactions ----
+  $("#who").addEventListener("change", (e) => { me = e.target.value; try { localStorage.setItem("forever.me", me); } catch {} renderEvents(); });
+
+  const needDb = () => { if (!db) { toast("This page isn't connected to its sheet yet."); return false; } return true; };
+  const fail = (err) => { console.error(err); toast("That didn't save. Try again in a moment."); };
+
+  $("#signup").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!needDb()) return;
+    const f = new FormData(ev.target), btn = ev.target.querySelector("button");
+    if (!rolePicks.length) { toast("Pick at least one role, in the order you'd like to play them."); return; }
+    const doc = { name: f.get("name").trim(), character: f.get("character").trim(), faction: f.get("faction"), race: f.get("race"), cls: f.get("cls"), roles: [...rolePicks], role: rolePicks[0], time: (f.get("time") || "").trim(), days: f.getAll("days"), notes: (f.get("notes") || "").trim(), createdAt: new Date().toISOString() };
+    if (!doc.name || !doc.character) return;
+    btn.disabled = true;
+    try {
+      const res = await api.post("addRoster", { data: doc });
+      me = res.id; try { localStorage.setItem("forever.me", me); } catch {}
+      applySnapshot(res);
+      ev.target.reset(); fillRaces(); rolePicks = []; renderRolePicks(); toast(`${doc.character} added to the roster.`);
+    } catch (e) { fail(e); } finally { btn.disabled = false; }
+  });
+
+  $("#addEvent").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!needDb()) return;
+    const f = new FormData(ev.target), btn = ev.target.querySelector("button");
+    const doc = { title: f.get("title").trim(), date: f.get("date"), time: (f.get("time") || "").trim(), kind: f.get("kind"), notes: (f.get("notes") || "").trim(), rsvps: {}, createdAt: new Date().toISOString() };
+    if (!doc.title || !doc.date) return;
+    btn.disabled = true;
+    try { applySnapshot(await api.post("addEvent", { data: doc })); ev.target.reset(); toast("Event added."); }
+    catch (e) { fail(e); } finally { btn.disabled = false; }
+  });
+
+  document.addEventListener("click", async (ev) => {
+    const b = ev.target.closest("button"); if (!b || !db) return;
+    if (b.dataset.rsvp) {
+      if (!me) return;
+      const e = events.find((x) => x.id === b.dataset.rsvp); if (!e) return;
+      const cur = (e.rsvps || {})[me];
+      const value = cur === b.dataset.v ? "none" : b.dataset.v;
+      // optimistic update, then sync
+      e.rsvps = { ...(e.rsvps || {}) }; if (value === "none") delete e.rsvps[me]; else e.rsvps[me] = value; renderEvents();
+      try { applySnapshot(await api.post("rsvp", { id: e.id, who: me, value })); } catch (err) { fail(err); }
+    } else if (b.dataset.delRoster) {
+      const r = roster.find((x) => x.id === b.dataset.delRoster);
+      if (r && confirmDelete(`Remove ${r.character} from the roster?`)) { try { applySnapshot(await api.post("deleteRoster", { id: r.id })); toast("Removed."); } catch (err) { fail(err); } }
+    } else if (b.dataset.delEvent) {
+      const e = events.find((x) => x.id === b.dataset.delEvent);
+      if (e && confirmDelete(`Delete "${e.title}"?`)) { try { applySnapshot(await api.post("deleteEvent", { id: e.id })); toast("Event deleted."); } catch (err) { fail(err); } }
+    }
+  });
+  // two-click confirm instead of a blocking dialog
+  let pending = null;
+  function confirmDelete(msg) { if (pending === msg) { pending = null; return true; } pending = msg; toast(msg + " Click ✕ again to confirm."); setTimeout(() => { if (pending === msg) pending = null; }, 4000); return false; }
+
+  // ---- Tabs ----
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", String(x === t)));
+    $("#tab-main").hidden = t.dataset.tab !== "main"; $("#tab-plan").hidden = t.dataset.tab !== "plan";
+    try { localStorage.setItem("forever.tab", t.dataset.tab); } catch {}
+  }));
+  try { const t = localStorage.getItem("forever.tab"); if (t === "plan") $('.tab[data-tab="plan"]').click(); } catch {}
+
+  // ---- Leveling plan ----
+  // Dungeon catalogue. Classic ranges are the usual "comfortable" ranges; Forever entries flagged new,
+  // and est:true where Blizzard hasn't published a level range yet.
+  const D = (name, lo, hi, o = {}) => ({ name, lo, hi, ...o });
+  const DUNGEONS = [
+    D("Ragefire Chasm", 13, 18, { fac:"H" }),
+    D("Hall of Thanes", 13, 18, { isNew:true, where:"under Ironforge" }),
+    D("Lordaeron Ruins", 15, 20, { isNew:true, where:"Tirisfal" }),
+    D("Deadmines", 17, 24, { fac:"A" }),
+    D("Wailing Caverns", 17, 24, { fac:"H" }),
+    D("Shadowfang Keep", 22, 30),
+    D("The Stockade", 22, 30, { fac:"A" }),
+    D("Blackfathom Deeps", 24, 32),
+    D("Explorer's League Dig", 22, 30, { isNew:true, est:true, where:"Wetlands" }),
+    D("City of Dalaran", 20, 35, { isNew:true }),
+    D("Gnomeregan", 29, 38),
+    D("Razorfen Kraul", 29, 38),
+    D("Scarlet Monastery: Graveyard", 26, 36),
+    D("Scarlet Monastery: Library", 29, 39),
+    D("Scarlet Monastery: Armory", 32, 41),
+    D("Scarlet Monastery: Cathedral", 35, 45),
+    D("Drowned Troll Ruin", 32, 42, { isNew:true, est:true, where:"off Stranglethorn" }),
+    D("Razorfen Downs", 37, 46),
+    D("Uldaman", 41, 51),
+    D("Zul'Farrak", 44, 54),
+    D("Maraudon", 46, 55),
+    D("Krol'dok Stronghold", 40, 55, { isNew:true, where:"Riverglades" }),
+    D("Sunken Temple", 50, 56),
+    D("Alcaz Island Prison", 50, 58, { isNew:true, est:true, where:"Dustwallow" }),
+    D("Blackrock Depths", 52, 60),
+    D("Dire Maul", 55, 60),
+    D("Lower Blackrock Spire", 55, 60),
+    D("Shaper's Terrace", 55, 60, { isNew:true, est:true }),
+    D("Scholomance", 58, 60),
+    D("Stratholme", 58, 60),
+    D("Upper Blackrock Spire", 58, 60),
+    D("Blackmaw Hold", 57, 60, { isNew:true, est:true, where:"furbolg city" }),
+    D("Barrow Deeps", 60, 60, { isNew:true, raid:10 }),
+    D("Onyxia's Lair", 60, 60, { raid:40 }),
+    D("Molten Core", 60, 60, { raid:40 }),
+    D("Zul'Gurub", 60, 60, { raid:20 }),
+    D("Hyjal Summit", 60, 60, { isNew:true, raid:20 }),
+  ];
+  // Level brackets with rough days-at-Steady-pace and where to quest.
+  const BRACKETS = [
+    { id:"b01", lo:1,  hi:12, days:2, zones:"Starting zones · Zephras Isle (Skyborne)" },
+    { id:"b13", lo:13, hi:18, days:2, zones:"Westfall / Loch Modan / Darkshore · Barrens / Silverpine" },
+    { id:"b19", lo:19, hi:22, days:1.5, zones:"Redridge / Ashenvale · Stonetalon / Barrens" },
+    { id:"b23", lo:23, hi:28, days:2.5, zones:"Duskwood / Wetlands · Hillsbrad / Thousand Needles" },
+    { id:"b29", lo:29, hi:34, days:3, zones:"Stranglethorn / Desolace / Arathi" },
+    { id:"b35", lo:35, hi:40, days:3.5, zones:"Riverglades (new, 30–45) / Dustwallow / Badlands" },
+    { id:"b41", lo:41, hi:46, days:4, zones:"Riverglades / Tanaris / Feralas / Hinterlands" },
+    { id:"b47", lo:47, hi:52, days:4.5, zones:"Searing Gorge / Un'Goro / Felwood / Burning Steppes" },
+    { id:"b53", lo:53, hi:57, days:4.5, zones:"Winterspring / Western & Eastern Plaguelands / Silithus" },
+    { id:"b58", lo:58, hi:60, days:3, zones:"Mount Hyjal (new endgame zone) / Plaguelands" },
+    { id:"b60", lo:60, hi:60, days:0, zones:"Attunements, pre-raid BiS, then raids", raidWeek:true },
+  ];
+  const overlap = (d, b) => Math.min(d.hi, b.hi) - Math.max(d.lo, b.lo) + 1;
+  const dungeonsFor = (b) => DUNGEONS.filter((d) => b.raidWeek ? d.raid : (!d.raid && overlap(d, b) >= 3));
+
+  let plan = { start: "2026-11-04", pace: 1, picks: {} };
+  const fmt = (dt) => dt.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+  const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+  function bracketDates() {
+    let cur = new Date(plan.start + "T12:00:00"); const out = [];
+    for (const b of BRACKETS) { const s = new Date(cur); const e = new Date(cur); e.setDate(e.getDate() + Math.max(1, Math.round(b.days * plan.pace)) - (b.raidWeek ? 0 : 1)); out.push({ ...b, start:s, end:e }); cur = new Date(e); cur.setDate(cur.getDate() + 1); }
+    return out;
+  }
+  function renderPlan() {
+    $("#planStart").value = plan.start; $("#planPace").value = String(plan.pace);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const rows = bracketDates();
+    const last = rows[rows.length - 2];
+    $("#planCount").textContent = `60 around ${fmt(last.end)}`;
+    $("#plan").innerHTML = rows.map((b) => {
+      const picks = plan.picks[b.id] || [];
+      const state = b.end < today ? "past" : (b.start <= today ? "now" : "");
+      const opts = dungeonsFor(b);
+      return `<div class="bracket ${state}" data-b="${b.id}">
+        <div class="lvl">${b.raidWeek ? "60" : `${b.lo}–${b.hi}`}<small><span class="when">${b.raidWeek ? fmt(b.start) + " →" : fmt(b.start) + (b.start.getTime() === b.end.getTime() ? "" : " – " + fmt(b.end))}</span></small></div>
+        <div>
+          <div class="zones"><b>${b.raidWeek ? "Endgame" : "Quest in"}:</b> ${esc(b.zones)}</div>
+          <div class="chips">${opts.map((d) => `<button class="chip ${picks.includes(d.name) ? "picked" : ""} ${d.raid ? "raid" : ""}" data-pick="${b.id}" data-d="${esc(d.name)}" title="${d.where ? esc(d.where) : ""}">
+              ${d.fac ? `<span class="fac ${d.fac}">${d.fac}</span>` : ""}${esc(d.name)}<span class="rng">${d.raid ? d.raid + "-man" : d.lo + "–" + d.hi}</span>${d.isNew ? `<span class="tag">New</span>` : ""}${d.est ? `<span class="tag est">Est</span>` : ""}
+            </button>`).join("")}</div>
+          <div class="bracket-actions">
+            <button data-sched="${b.id}" ${picks.length ? "" : "disabled"}>Add to schedule</button>
+            <span class="picked-list">${picks.length ? "Planned: " + picks.map(esc).join(", ") : "Pick one or more dungeons to run in this bracket."}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  renderPlan();
+
+  const savePlan = async (patch) => {
+    plan = { ...plan, ...patch }; renderPlan();
+    if (!db) return;
+    try { await api.post("setPlan", { data: { settings: { start: plan.start, pace: plan.pace, picks: plan.picks } } }); } catch (e) { fail(e); }
+  };
+  $("#planStart").addEventListener("change", (e) => { if (e.target.value) savePlan({ start: e.target.value }); });
+  $("#planPace").addEventListener("change", (e) => savePlan({ pace: Number(e.target.value) }));
+  document.addEventListener("click", async (ev) => {
+    const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.pick) {
+      const list = new Set(plan.picks[b.dataset.pick] || []);
+      list.has(b.dataset.d) ? list.delete(b.dataset.d) : list.add(b.dataset.d);
+      savePlan({ picks: { ...plan.picks, [b.dataset.pick]: [...list] } });
+    } else if (b.dataset.sched) {
+      if (!needDb()) return;
+      const row = bracketDates().find((x) => x.id === b.dataset.sched); const picks = plan.picks[row.id] || [];
+      if (!picks.length) return;
+      b.disabled = true;
+      try {
+        for (const name of picks) {
+          const d = DUNGEONS.find((x) => x.name === name);
+          const dup = events.some((e) => e.date === iso(row.start) && e.title.includes(name));
+          if (dup) continue;
+          applySnapshot(await api.post("addEvent", { data: { title: `${row.raidWeek ? "Raid" : "Lv " + row.lo + "–" + row.hi} · ${name}`, date: iso(row.start), time: "", kind: d?.raid ? "Raid" : "Dungeon", notes: d?.isNew ? "New in Forever" + (d.est ? " (level range is our estimate)" : "") : "" } }));
+        }
+        toast("Added to the schedule. Set a time and RSVP on the Roster & Schedule tab.");
+      } catch (err) { fail(err); } finally { b.disabled = false; }
+    }
+  });
+
+  // ---- Live data ----
+  (async () => {
+    if (!API_URL) { $("#setup").hidden = false; renderRoster(); renderEvents(); return; }
+    db = true;
+    const refresh = async () => { try { applySnapshot(await api.get()); } catch (e) { console.error(e); } };
+    await refresh();
+    setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  })();
+})();
+</script>
+</body>
+</html>
