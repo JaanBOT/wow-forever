@@ -454,7 +454,7 @@ const POLL_MS = 12000;
   function applySnapshot(s) {
     if (!s) return;
     roster = (s.roster || []).slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
-    events = s.events || [];
+    events = (s.events || []).map((e) => ({ ...e, date: String(e.date || "").slice(0, 10) }));
     if (s.plan && s.plan.settings) { const d = s.plan.settings; plan = { start: d.start || plan.start, pace: Number(d.pace) || 1, picks: d.picks || {} }; }
     renderRoster(); renderEvents(); if (typeof renderPlan === "function") renderPlan();
   }

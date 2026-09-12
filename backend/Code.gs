@@ -33,9 +33,14 @@ function readAll(name) {
     if (o.roles !== undefined) o.roles = parseJson(o.roles, []);
     if (o.days !== undefined) o.days = parseJson(o.days, []);
     if (o.rsvps !== undefined) o.rsvps = parseJson(o.rsvps, {});
-    if (o.date instanceof Date) o.date = Utilities.formatDate(o.date, "UTC", "yyyy-MM-dd");
+    if (o.date !== undefined) o.date = toIsoDate(o.date);
     return o;
   });
+}
+
+function toIsoDate(v) {
+  if (Object.prototype.toString.call(v) === "[object Date]") return Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  return String(v).slice(0, 10);
 }
 
 function parseJson(v, fallback) { try { return v === "" || v == null ? fallback : JSON.parse(v); } catch (e) { return fallback; } }
@@ -82,7 +87,7 @@ function doPost(e) {
     if (a === "addEvent") {
       const d = body.data || {};
       const id = Utilities.getUuid();
-      sheet("events").appendRow([id, clean(d.title, 60), clean(d.date, 10), clean(d.time, 40), clean(d.kind, 20), clean(d.notes), "{}", new Date().toISOString()]);
+      sheet("events").appendRow([id, clean(d.title, 60), "'" + clean(d.date, 10), clean(d.time, 40), clean(d.kind, 20), clean(d.notes), "{}", new Date().toISOString()]);
       return out({ ok: true, id: id, ...snapshot() });
     }
     if (a === "deleteEvent") {
