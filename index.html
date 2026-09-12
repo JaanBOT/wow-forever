@@ -471,7 +471,7 @@ const POLL_MS = 12000;
     $("#comp").innerHTML = roster.length
       ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}<span style="margin-left:auto"><span class="crest A">A</span><b>${fx.A}</b> · <span class="crest H">H</span><b>${fx.H}</b></span>`
       : `<span>No one yet. Whoever signs up first picks the faction everyone else pretends they wanted.</span>`;
-    if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Connecting to the shared roster…"}</td></tr>`; return; }
+    if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Not connected to the sheet yet."}</td></tr>`; return; }
     tb.innerHTML = roster.map((r) => `
       <tr>
         <td><div class="char"><span class="glyph" style="background:${CLASS_COLORS[r.cls] || "#999"}" title="${esc(r.cls)}">${GLYPHS[r.cls] || ""}</span>${esc(r.character)}</div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
@@ -490,7 +490,7 @@ const POLL_MS = 12000;
     const today = new Date(); today.setHours(0,0,0,0);
     const sorted = [...events].sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
     $("#eventCount").textContent = sorted.length ? `${sorted.filter((e) => new Date(e.date + "T12:00:00") >= today).length} upcoming` : "";
-    if (!sorted.length) { box.innerHTML = `<div class="empty">${db ? "Nothing scheduled. Add the first run." : "Connecting…"}</div>`; return; }
+    if (!sorted.length) { box.innerHTML = `<div class="empty">${db ? "Nothing scheduled. Add the first run." : "Not connected to the sheet yet."}</div>`; return; }
     box.innerHTML = sorted.map((e) => {
       const d = new Date(e.date + "T12:00:00"), past = d < today;
       const rs = e.rsvps || {}, tally = { yes:[], maybe:[], no:[] };
