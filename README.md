@@ -17,9 +17,18 @@ A shared sign-up sheet and event schedule for our friend group ahead of
 - `index.html` — the app (published as a Claude artifact with a shared live database)
 - `README.md` — this file
 
-## Data model (artifact db)
-- `roster/<id>`  — one document per player: name, character, class, race, faction, role, days, notes
-- `events/<id>`  — one document per event: title, date, time, kind, notes, rsvps {rosterId: yes|maybe|no}
+## Data model (Google Sheet tabs)
+- `roster` — one row per player: name, character, faction, race, cls, roles (ranked), time, days, notes, professions (up to 2), level
+- `events` — one row per event: title, date, time, kind, notes, rsvps {rosterId: yes|maybe|no}, createdBy (roster id)
+- `plan`   — key/value; `settings` holds { start, pace, picks }
+
+## Features
+- **Roster**: sign up, then pick yourself under "RSVP as" to edit (✎) or remove (✕) your own entry. Only your own row shows those buttons.
+- **Level tracker**: your row has a level box; the roster header shows the group's level range and median, and the Leveling Plan highlights the bracket the group is actually in (falls back to dates until someone sets a level).
+- **Professions**: up to two per character; the roster shows coverage and which crafting professions nobody has.
+- **Group builder**: every dungeon/raid event shows Tank/Healer/DPS slots filled from the ranked roles of everyone who's "in" (5-man 1/1/3, 10-man 2/2/6, 20-man 2/5/13, 40-man 4/10/26) and what's still missing.
+- **Calendar**: List/Calendar toggle on the schedule. Click a day to filter to it; click an empty day to start an event on that date.
+- **Delete protection**: roster rows can only be removed by their owner (client-side); events only by whoever created them (enforced in Code.gs; events made before this rule stay deletable by anyone).
 
 ## Leveling Plan tab
 Level brackets from 1 to 60 with target dates computed from a shared start date and pace

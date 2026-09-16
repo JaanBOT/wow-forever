@@ -251,6 +251,50 @@
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   .setup { margin: 0 0 20px; padding: 14px 16px; border: 1px dashed var(--gold); border-radius: var(--radius); background: var(--gold-soft); font-size: 14px; }
   .setup code { background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+  /* Roster extras */
+  .profs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+  .profs .p { padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; font-variant-numeric: tabular-nums; }
+  .profs .p.missing { opacity: .55; border-style: dashed; }
+  .profs .lbl { font-weight: 600; color: var(--ink); margin-right: 4px; }
+  input[name="level"] { flex: none; align-self: flex-start; width: 110px; }
+  .lvl-in { width: 54px; padding: 2px 6px; font-size: 13px; margin-left: 4px; }
+  .lv { font-size: 12px; font-weight: 700; color: var(--gold); margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .edit { color: var(--muted); font-size: 13px; background: none; border: 0; padding: 0 4px; }
+  .edit:hover { color: var(--gold); }
+  .rowbtns { display: flex; gap: 2px; justify-content: flex-end; }
+  #cancelEdit { display: none; }
+  form.editing #cancelEdit { display: inline-block; }
+  /* Group builder */
+  .group { margin-top: 8px; font-size: 13px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .group .slot { padding: 2px 8px; border-radius: 3px; border: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .group .slot.short { border-color: var(--horde); color: var(--horde); }
+  .group .slot.full { border-color: var(--ok); color: var(--ok); }
+  .group .need { color: var(--horde); font-weight: 600; }
+  .group .ready { color: var(--ok); font-weight: 600; }
+  /* Calendar */
+  .viewtoggle { display: flex; gap: 4px; margin-left: auto; }
+  .viewtoggle button { padding: 3px 9px; font-size: 12px; }
+  .viewtoggle button.on { background: var(--gold); border-color: var(--gold); color: #1a1207; }
+  .cal-view { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cal-head h4 { flex: 1; text-align: center; font-family: Cinzel, serif; font-size: 16px; }
+  .cal-head button { padding: 3px 10px; font-size: 13px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .cal-grid .dow { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: center; padding: 2px 0 4px; }
+  .cal-day { min-width: 0; min-height: 66px; border: 1px solid var(--line); border-radius: 4px; padding: 4px; background: var(--bg); font-size: 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; font-weight: 400; }
+  .cal-day.out { opacity: .4; }
+  .cal-day.today { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .cal-day.sel { background: var(--gold-soft); }
+  .cal-day .n { font-weight: 600; color: var(--muted); }
+  .cal-day .mark { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; margin-left: 4px; }
+  .cal-ev { display: flex; max-width: 100%; align-items: center; gap: 4px; font-size: 11px; padding: 1px 4px; border-radius: 3px; background: var(--gold-soft); color: var(--ink); overflow: hidden; white-space: nowrap; }
+  .cal-ev span { overflow: hidden; text-overflow: ellipsis; }
+  .cal-ev img { width: 14px; height: 14px; border-radius: 2px; flex: none; }
+  .cal-ev.mine { box-shadow: 0 0 0 1px var(--ok) inset; }
+  .cal-ev.raid { background: rgba(165,41,31,.16); }
+  .cal-day .more { font-size: 10px; color: var(--muted); }
+  .cal-foot { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  @media (max-width: 560px) { .cal-day { min-height: 46px; padding: 3px; } .cal-ev { display: none; } .cal-day .more { display: none; } }
   html { background: var(--bg); }
 </style>
 </head>
@@ -300,6 +344,7 @@
       <h2>Roster <span class="count" id="rosterCount"></span></h2>
       <div class="panel">
         <div class="comp" id="comp"></div>
+        <div class="profs" id="profs" hidden></div>
         <div class="tablewrap">
           <table>
             <thead><tr><th>Character</th><th>Class · Race</th><th>Role</th><th>Nights</th><th></th></tr></thead>
@@ -321,6 +366,12 @@
             <label>Class <select name="cls" id="cls"></select></label>
           </div>
           <div class="row">
+            <label>Current level <input name="level" type="number" min="1" max="60" value="1" inputmode="numeric"></label>
+            <label>Professions (up to two)
+              <div class="daypick rolepick" id="profpick"></div>
+            </label>
+          </div>
+          <div class="row">
             <label>Roles, in order of preference
               <div class="daypick rolepick" id="rolepick">
                 <button type="button" data-role="DPS">DPS</button>
@@ -335,7 +386,8 @@
           </label>
           <label>Notes <textarea name="notes" placeholder="Alt plans, professions you'll cover, Skyborne pack or not…" maxlength="240"></textarea></label>
           <div class="actions">
-            <button class="primary" type="submit">Add me to the roster</button>
+            <button class="primary" type="submit" id="signupBtn">Add me to the roster</button>
+            <button type="button" id="cancelEdit">Cancel</button>
             <span class="note" id="signupNote">New in Forever: Human Hunter, Dwarf Shaman, Gnome Priest, Orc Mage, Undead Paladin, Troll Warlock. Skyborne Elves can join either faction.</span>
           </div>
         </form>
@@ -348,7 +400,9 @@
         <div class="who">
           <span>RSVP as</span>
           <select id="who"><option value="">— pick your roster entry —</option></select>
+          <div class="viewtoggle" id="viewtoggle"><button data-view="list" class="on">List</button><button data-view="cal">Calendar</button></div>
         </div>
+        <div class="cal-view" id="calendar" hidden></div>
         <div id="events"><div class="empty">Loading events…</div></div>
       </div>
 
@@ -398,6 +452,8 @@ const POLL_MS = 12000;
     Druid:   G('<path d="M12 21c-4-4-8-7-8-11a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 4-4 7-8 11zM12 9v8"/>'),
   };
   const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const PROFS = ["Alchemy","Blacksmithing","Enchanting","Engineering","Herbalism","Leatherworking","Mining","Skinning","Tailoring"];
+  const CRAFTERS = ["Alchemy","Blacksmithing","Enchanting","Engineering","Leatherworking","Tailoring"];
   const RACE_ICON = { Human:"human", Dwarf:"dwarf", "Night Elf":"nightelf", Gnome:"gnome", Orc:"orc", Undead:"undead", Tauren:"tauren", Troll:"troll" };
   const clsIcon = (c) => CLASS_COLORS[c] ? `<img class="icon" src="img/class/${c.toLowerCase()}.jpg" alt="" title="${c}">` : "";
   const raceIcon = (r) => RACE_ICON[r] ? `<img class="icon sm" src="img/race/${RACE_ICON[r]}.jpg" alt="">` : "";
@@ -406,6 +462,8 @@ const POLL_MS = 12000;
   const BETA = new Date("2026-09-17T00:00:00"), LAUNCH = new Date("2026-11-04T00:00:00");
 
   const $ = (s) => document.querySelector(s);
+  const fmt = (dt) => dt.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+  const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   let toastT; const toast = (m) => { const el = $("#status"); el.textContent = m; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2600); };
 
@@ -425,6 +483,11 @@ const POLL_MS = 12000;
   let rolePicks = [];
   const renderRolePicks = () => $("#rolepick").querySelectorAll("button").forEach((b) => { const i = rolePicks.indexOf(b.dataset.role); b.classList.toggle("on", i >= 0); b.dataset.rank = i >= 0 ? i + 1 : ""; });
   $("#rolepick").addEventListener("click", (e) => { const b = e.target.closest("button[data-role]"); if (!b) return; rolePicks = rolePicks.includes(b.dataset.role) ? rolePicks.filter((r) => r !== b.dataset.role) : [...rolePicks, b.dataset.role]; renderRolePicks(); });
+  // professions: up to two
+  let profPicks = [];
+  $("#profpick").innerHTML = PROFS.map((p) => `<button type="button" data-prof="${p}">${p}</button>`).join("");
+  const renderProfPicks = () => $("#profpick").querySelectorAll("button").forEach((b) => { const i = profPicks.indexOf(b.dataset.prof); b.classList.toggle("on", i >= 0); b.dataset.rank = i >= 0 ? i + 1 : ""; });
+  $("#profpick").addEventListener("click", (e) => { const b = e.target.closest("button[data-prof]"); if (!b) return; const p = b.dataset.prof; if (profPicks.includes(p)) profPicks = profPicks.filter((x) => x !== p); else if (profPicks.length < 2) profPicks.push(p); else { toast("Two professions max. Click one to remove it."); return; } renderProfPicks(); });
   const rolesOf = (r) => Array.isArray(r.roles) && r.roles.length ? r.roles : (r.role && r.role !== "Flex" ? [r.role] : ["DPS","Tank","Healer"]);
 
   // collapsible panels
@@ -460,6 +523,7 @@ const POLL_MS = 12000;
   let me = ""; try { me = localStorage.getItem("forever.me") || ""; } catch {}
 
   const rosterById = () => Object.fromEntries(roster.map((r) => [r.id, r]));
+  const medianLevel = () => { const lv = roster.map((r) => Number(r.level) || 0).filter((n) => n > 0).sort((a, b) => a - b); if (!lv.length) return 0; const m = lv.length >> 1; return lv.length % 2 ? lv[m] : Math.round((lv[m-1] + lv[m]) / 2); };
 
   function renderRoster() {
     const tb = $("#roster");
@@ -467,44 +531,113 @@ const POLL_MS = 12000;
     const main = { Tank:0, Healer:0, DPS:0 }, can = { Tank:0, Healer:0, DPS:0 }, fx = { A:0, H:0 };
     roster.forEach((r) => { const rs = rolesOf(r); main[rs[0]] = (main[rs[0]] || 0) + 1; rs.forEach((x) => { can[x] = (can[x] || 0) + 1; }); fx[r.faction] = (fx[r.faction] || 0) + 1; });
     const cell = (k) => `<span title="${main[k]} prefer ${k}, ${can[k]} can play it"><b>${main[k]}</b> ${k.toLowerCase()}${can[k] > main[k] ? ` <span class="sub">(+${can[k] - main[k]} can)</span>` : ""}</span>`;
+    const lv = roster.map((r) => Number(r.level) || 0).filter((n) => n > 0).sort((a, b) => a - b);
+    const lvTxt = lv.length ? `<span title="Levels of everyone who has set one">Lv <b>${lv[0]}${lv.length > 1 && lv[lv.length-1] !== lv[0] ? "–" + lv[lv.length-1] : ""}</b>${lv.length > 2 ? ` <span class="sub">(median ${medianLevel()})</span>` : ""}</span>` : "";
     $("#comp").innerHTML = roster.length
-      ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}<span style="margin-left:auto">${crestImg("A")}<b>${fx.A}</b> · ${crestImg("H")}<b>${fx.H}</b></span>`
+      ? `${cell("Tank")}${cell("Healer")}${cell("DPS")}${lvTxt}<span style="margin-left:auto">${crestImg("A")}<b>${fx.A}</b> · ${crestImg("H")}<b>${fx.H}</b></span>`
       : `<span>No one yet. Whoever signs up first picks the faction everyone else pretends they wanted.</span>`;
+    // profession coverage
+    const pc = {}; roster.forEach((r) => (r.professions || []).forEach((p) => { pc[p] = (pc[p] || 0) + 1; }));
+    const anyProf = Object.keys(pc).length > 0;
+    $("#profs").hidden = !anyProf;
+    if (anyProf) {
+      const missing = CRAFTERS.filter((p) => !pc[p]);
+      $("#profs").innerHTML = `<span class="lbl">Professions</span>` + PROFS.filter((p) => pc[p]).map((p) => `<span class="p" title="${esc(roster.filter((r) => (r.professions || []).includes(p)).map((r) => r.character).join(", "))}">${p} ×${pc[p]}</span>`).join("")
+        + (missing.length ? `<span class="sub" style="margin-left:6px">Nobody crafting:</span>` + missing.map((p) => `<span class="p missing">${p}</span>`).join("") : "");
+    }
     if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Not connected to the sheet yet."}</td></tr>`; return; }
     tb.innerHTML = roster.map((r) => `
       <tr>
-        <td><div class="char">${clsIcon(r.cls)}<span style="color:${CLASS_COLORS[r.cls] || "inherit"}">${esc(r.character)}</span></div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
-        <td>${esc(r.cls)}<div class="sub">${crestImg(r.faction)}${raceIcon(r.race)}${esc(r.race)}</div></td>
+        <td><div class="char">${clsIcon(r.cls)}<span style="color:${CLASS_COLORS[r.cls] || "inherit"}">${esc(r.character)}</span>${r.id === me ? `<input class="lvl-in" type="number" min="1" max="60" value="${Number(r.level) || 1}" data-lvl="${r.id}" title="Your current level">` : (Number(r.level) > 0 ? `<span class="lv">Lv ${Number(r.level)}</span>` : "")}</div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
+        <td>${esc(r.cls)}<div class="sub">${crestImg(r.faction)}${raceIcon(r.race)}${esc(r.race)}</div>${(r.professions || []).length ? `<div class="sub">${r.professions.map(esc).join(" · ")}</div>` : ""}</td>
         <td><div class="roles">${rolesOf(r).map((x) => `<span class="r">${esc(x)}</span>`).join("")}</div>${r.time ? `<div class="sub">${esc(r.time)}</div>` : ""}</td>
         <td><div class="days">${DAYS.map((d) => `<span class="${(r.days || []).includes(d) ? "on" : ""}" title="${d}">${d[0]}</span>`).join("")}</div>${r.notes ? `<div class="sub">${esc(r.notes)}</div>` : ""}</td>
-        <td><button class="del" data-del-roster="${r.id}" title="Remove ${esc(r.character)}">✕</button></td>
+        <td>${r.id === me ? `<div class="rowbtns"><button class="edit" data-edit-roster="${r.id}" title="Edit your entry">✎</button><button class="del" data-del-roster="${r.id}" title="Remove ${esc(r.character)}">✕</button></div>` : ""}</td>
       </tr>`).join("");
     const who = $("#who");
     who.innerHTML = `<option value="">— pick your roster entry —</option>` + roster.map((r) => `<option value="${r.id}" ${r.id === me ? "selected" : ""}>${esc(r.character)} (${esc(r.name)})</option>`).join("");
     if (me && !roster.some((r) => r.id === me)) { me = ""; who.value = ""; }
   }
 
+  // ---- Group builder: fill tank/healer slots from ranked roles of everyone who's in ----
+  const SLOTS = { 5: { Tank:1, Healer:1, DPS:3 }, 10: { Tank:2, Healer:2, DPS:6 }, 20: { Tank:2, Healer:5, DPS:13 }, 40: { Tank:4, Healer:10, DPS:26 } };
+  function groupSize(e) {
+    const d = DUNGEONS.find((x) => e.title.includes(x.name));
+    if (d) return d.raid || 5;
+    return e.kind === "Raid" ? 20 : e.kind === "Dungeon" ? 5 : 0;
+  }
+  function buildGroup(e, by) {
+    const size = groupSize(e); if (!size) return null;
+    const need = SLOTS[size], got = { Tank:[], Healer:[], DPS:[] };
+    const people = Object.entries(e.rsvps || {}).filter(([id, v]) => v === "yes" && by[id]).map(([id]) => by[id]);
+    const left = new Set(people);
+    // pass 1: preferred role; then anyone who lists tank/heal as 2nd or 3rd choice
+    for (const role of ["Tank","Healer"]) for (const p of people) if (left.has(p) && rolesOf(p)[0] === role && got[role].length < need[role]) { got[role].push(p); left.delete(p); }
+    for (const role of ["Tank","Healer"]) for (const rank of [1, 2]) for (const p of people) if (left.has(p) && rolesOf(p)[rank] === role && got[role].length < need[role]) { got[role].push(p); left.delete(p); }
+    for (const p of left) got.DPS.push(p);
+    const missing = ["Tank","Healer","DPS"].filter((r) => got[r].length < need[r]).map((r) => { const n = need[r] - got[r].length; return `${n} ${r.toLowerCase()}${n > 1 && r !== "DPS" ? "s" : ""}`; });
+    return { size, need, got, missing, total: people.length };
+  }
+  function groupHtml(g) {
+    if (!g || !g.total) return "";
+    const got = (r) => g.got[r].length;
+    const slot = (r) => `<span class="slot ${got(r) < g.need[r] ? "short" : got(r) === g.need[r] ? "full" : ""}" title="${esc(g.got[r].map((p) => p.character).join(", ") || "—")}">${r} ${got(r)}/${g.need[r]}</span>`;
+    return `<div class="group">${slot("Tank")}${slot("Healer")}${slot("DPS")}${g.missing.length ? `<span class="need">Need ${g.missing.join(", ")}</span>` : `<span class="ready">${g.size}-man ready${g.total > g.size ? ` (+${g.total - g.size} spare)` : ""}</span>`}</div>`;
+  }
+
+  // ---- Calendar ----
+  let view = "list"; try { view = localStorage.getItem("forever.view") || "list"; } catch {}
+  let calMonth = null, calSel = "";
+  const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  const eventIcon = (e) => { const d = DUNGEONS.find((x) => e.title.includes(x.name)); return d ? dIcon(d) : e.kind === "Raid" ? "img/dungeon/raid.jpg" : e.kind === "Dungeon" ? "img/dungeon/generic.jpg" : "img/dungeon/new.jpg"; };
+  function renderCalendar() {
+    const cal = $("#calendar"); cal.hidden = view !== "cal"; if (view !== "cal") return;
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (!calMonth) { const up = [...events].filter((e) => e.date >= iso(today)).sort((a, b) => a.date.localeCompare(b.date))[0]; const d = up ? new Date(up.date + "T12:00:00") : today; calMonth = new Date(d.getFullYear(), d.getMonth(), 1); }
+    const y = calMonth.getFullYear(), m = calMonth.getMonth();
+    const first = new Date(y, m, 1), startDow = (first.getDay() + 6) % 7; // Monday first
+    const byDay = {}; events.forEach((e) => { (byDay[e.date] = byDay[e.date] || []).push(e); });
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(y, m, 1 - startDow + i); const k = iso(d); const evs = (byDay[k] || []).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+      if (i >= 35 && d.getMonth() !== m) break;
+      cells.push(`<button type="button" class="cal-day ${d.getMonth() !== m ? "out" : ""} ${k === iso(today) ? "today" : ""} ${k === calSel ? "sel" : ""}" data-day="${k}" title="${esc(evs.length ? evs.map((e) => e.title).join(", ") : "Add an event on " + fmt(d))}">
+        <span class="n">${d.getDate()}${evs.length ? `<span class="mark"></span>` : ""}</span>
+        ${evs.slice(0, 3).map((e) => `<span class="cal-ev ${me && (e.rsvps || {})[me] === "yes" ? "mine" : ""} ${e.kind === "Raid" ? "raid" : ""}"><img src="${eventIcon(e)}" alt=""><span>${esc(e.title.replace(/^(Lv [0-9–-]+|Raid) · /, ""))}</span></span>`).join("")}
+        ${evs.length > 3 ? `<span class="more">+${evs.length - 3} more</span>` : ""}
+      </button>`);
+    }
+    cal.innerHTML = `<div class="cal-head"><button data-cal="-1" title="Previous month">‹</button><h4>${first.toLocaleString("en-US", { month:"long", year:"numeric" })}</h4><button data-cal="today">Today</button><button data-cal="1" title="Next month">›</button></div>
+      <div class="cal-grid">${DAYS.map((d) => `<span class="dow">${d}</span>`).join("")}${cells.join("")}</div>
+      <div class="cal-foot">${calSel ? `Showing ${fmt(new Date(calSel + "T12:00:00"))}. <a href="#" data-cal-clear>Show the whole month</a>.` : "Click a day to see its runs, or an empty day to add one. Green outline = you're in."}</div>`;
+  }
+
   function renderEvents() {
     const box = $("#events"), by = rosterById();
     const today = new Date(); today.setHours(0,0,0,0);
-    const sorted = [...events].sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+    let sorted = [...events].sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
     $("#eventCount").textContent = sorted.length ? `${sorted.filter((e) => new Date(e.date + "T12:00:00") >= today).length} upcoming` : "";
-    if (!sorted.length) { box.innerHTML = `<div class="empty">${db ? "Nothing scheduled. Add the first run." : "Not connected to the sheet yet."}</div>`; return; }
+    $("#viewtoggle").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.view === view));
+    renderCalendar();
+    if (view === "cal") sorted = sorted.filter((e) => calSel ? e.date === calSel : (calMonth && e.date.startsWith(monthKey(calMonth))));
+    if (!sorted.length) { box.innerHTML = `<div class="empty">${!db ? "Not connected to the sheet yet." : view === "cal" ? (calSel ? "Nothing on this day." : "Nothing this month.") : "Nothing scheduled. Add the first run."}</div>`; return; }
     box.innerHTML = sorted.map((e) => {
       const d = new Date(e.date + "T12:00:00"), past = d < today;
       const rs = e.rsvps || {}, tally = { yes:[], maybe:[], no:[] };
       for (const [id, v] of Object.entries(rs)) if (by[id] && tally[v]) tally[v].push(by[id].character);
       const mine = me ? rs[me] : "";
-      return `<div class="event ${past ? "past" : ""}">
+      const canDel = !e.createdBy || e.createdBy === me;
+      return `<div class="event ${past ? "past" : ""}" id="ev-${e.id}">
         <div class="cal"><div class="m">${d.toLocaleString("en-US",{month:"short"})}</div><div class="d">${d.getDate()}</div><div class="w">${d.toLocaleString("en-US",{weekday:"short"})}</div></div>
         <div>
-          <h3>${(() => { const d = DUNGEONS.find((x) => e.title.includes(x.name)); const src = d ? dIcon(d) : e.kind === "Raid" ? "img/dungeon/raid.jpg" : e.kind === "Dungeon" ? "img/dungeon/generic.jpg" : "img/dungeon/new.jpg"; return `<img class="icon sm" src="${src}" alt="">`; })()}${esc(e.title)}<span class="kind">${esc(e.kind || "")}</span></h3>
+          <h3><img class="icon sm" src="${eventIcon(e)}" alt="">${esc(e.title)}<span class="kind">${esc(e.kind || "")}</span></h3>
           <div class="meta">${e.time ? esc(e.time) : "Time TBD"}${e.notes ? ` · ${esc(e.notes)}` : ""}</div>
           <div class="rsvp">
             ${["yes","maybe","no"].map((v) => `<button class="${v} ${mine === v ? "on" : ""}" data-rsvp="${e.id}" data-v="${v}" ${me ? "" : "disabled"}>${v === "yes" ? "I'm in" : v === "maybe" ? "Maybe" : "Can't"}</button>`).join("")}
             <span class="tally">${tally.yes.length} in · ${tally.maybe.length} maybe</span>
-            <button class="del" data-del-event="${e.id}" title="Delete event">✕</button>
+            ${canDel ? `<button class="del" data-del-event="${e.id}" title="Delete event">✕</button>` : ""}
           </div>
+          ${groupHtml(buildGroup(e, by))}
           ${tally.yes.length || tally.maybe.length ? `<div class="names">${tally.yes.length ? `<b>In:</b> ${tally.yes.map(esc).join(", ")}` : ""}${tally.yes.length && tally.maybe.length ? " · " : ""}${tally.maybe.length ? `<b>Maybe:</b> ${tally.maybe.map(esc).join(", ")}` : ""}</div>` : ""}
         </div>
       </div>`;
@@ -514,24 +647,52 @@ const POLL_MS = 12000;
   renderRoster(); renderEvents();
 
   // ---- Interactions ----
-  $("#who").addEventListener("change", (e) => { me = e.target.value; try { localStorage.setItem("forever.me", me); } catch {} renderEvents(); });
+  $("#who").addEventListener("change", (e) => { me = e.target.value; try { localStorage.setItem("forever.me", me); } catch {} lastSnap = ""; renderRoster(); renderEvents(); });
 
   const needDb = () => { if (!db) { toast("This page isn't connected to its sheet yet."); return false; } return true; };
   const fail = (err) => { console.error(err); toast("That didn't save. Try again in a moment."); };
 
+  let editing = "";
+  const resetSignup = () => { const f = $("#signup"); f.reset(); fillRaces(); rolePicks = []; renderRolePicks(); profPicks = []; renderProfPicks(); editing = ""; f.classList.remove("editing"); $("#signupBtn").textContent = "Add me to the roster"; };
+  function startEdit(r) {
+    const f = $("#signup");
+    f.elements.name.value = r.name || ""; f.elements.character.value = r.character || "";
+    f.elements.faction.value = r.faction || "A"; fillRaces();
+    if ([...f.elements.race.options].some((o) => o.value === r.race)) { f.elements.race.value = r.race; fillClasses(); }
+    if ([...f.elements.cls.options].some((o) => o.value === r.cls)) f.elements.cls.value = r.cls;
+    f.elements.level.value = Number(r.level) || 1; f.elements.time.value = r.time || ""; f.elements.notes.value = r.notes || "";
+    f.querySelectorAll('input[name="days"]').forEach((c) => { c.checked = (r.days || []).includes(c.value); });
+    rolePicks = [...rolesOf(r)]; renderRolePicks(); profPicks = [...(r.professions || [])]; renderProfPicks();
+    editing = r.id; f.classList.add("editing"); $("#signupBtn").textContent = "Save changes";
+    $("#signupToggle").setAttribute("aria-expanded", "true"); f.hidden = false; f.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("#cancelEdit").addEventListener("click", resetSignup);
   $("#signup").addEventListener("submit", async (ev) => {
     ev.preventDefault(); if (!needDb()) return;
-    const f = new FormData(ev.target), btn = ev.target.querySelector("button");
+    const f = new FormData(ev.target), btn = $("#signupBtn");
     if (!rolePicks.length) { toast("Pick at least one role, in the order you'd like to play them."); return; }
-    const doc = { name: f.get("name").trim(), character: f.get("character").trim(), faction: f.get("faction"), race: f.get("race"), cls: f.get("cls"), roles: [...rolePicks], role: rolePicks[0], time: (f.get("time") || "").trim(), days: f.getAll("days"), notes: (f.get("notes") || "").trim(), createdAt: new Date().toISOString() };
+    const doc = { name: f.get("name").trim(), character: f.get("character").trim(), faction: f.get("faction"), race: f.get("race"), cls: f.get("cls"), roles: [...rolePicks], role: rolePicks[0], time: (f.get("time") || "").trim(), days: f.getAll("days"), notes: (f.get("notes") || "").trim(), professions: [...profPicks], level: Math.max(1, Math.min(60, Number(f.get("level")) || 1)), createdAt: new Date().toISOString() };
     if (!doc.name || !doc.character) return;
     btn.disabled = true;
     try {
-      const res = await api.post("addRoster", { data: doc });
-      me = res.id; try { localStorage.setItem("forever.me", me); } catch {}
-      applySnapshot(res);
-      ev.target.reset(); fillRaces(); rolePicks = []; renderRolePicks(); toast(`${doc.character} added to the roster.`);
+      if (editing) {
+        applySnapshot(await api.post("updateRoster", { id: editing, data: doc }));
+        toast(`${doc.character} updated.`);
+      } else {
+        const res = await api.post("addRoster", { data: doc });
+        me = res.id; try { localStorage.setItem("forever.me", me); } catch {}
+        applySnapshot(res); toast(`${doc.character} added to the roster.`);
+      }
+      resetSignup();
     } catch (e) { fail(e); } finally { btn.disabled = false; }
+  });
+  // quick level update from your own roster row
+  document.addEventListener("change", async (ev) => {
+    const inp = ev.target.closest("input[data-lvl]"); if (!inp || !db) return;
+    const r = roster.find((x) => x.id === inp.dataset.lvl); if (!r) return;
+    const level = Math.max(1, Math.min(60, Number(inp.value) || 1)); inp.value = level;
+    r.level = level; lastSnap = ""; renderRoster(); if (typeof renderPlan === "function") renderPlan();
+    try { applySnapshot(await api.post("updateRoster", { id: r.id, data: { ...r, level } })); toast(`Level ${level} saved.`); } catch (e) { fail(e); }
   });
 
   $("#addEvent").addEventListener("submit", async (ev) => {
@@ -540,7 +701,7 @@ const POLL_MS = 12000;
     const doc = { title: f.get("title").trim(), date: f.get("date"), time: (f.get("time") || "").trim(), kind: f.get("kind"), notes: (f.get("notes") || "").trim(), rsvps: {}, createdAt: new Date().toISOString() };
     if (!doc.title || !doc.date) return;
     btn.disabled = true;
-    try { applySnapshot(await api.post("addEvent", { data: doc })); ev.target.reset(); toast("Event added."); }
+    try { applySnapshot(await api.post("addEvent", { data: doc, who: me })); ev.target.reset(); toast("Event added."); }
     catch (e) { fail(e); } finally { btn.disabled = false; }
   });
 
@@ -554,14 +715,30 @@ const POLL_MS = 12000;
       // optimistic update, then sync
       e.rsvps = { ...(e.rsvps || {}) }; if (value === "none") delete e.rsvps[me]; else e.rsvps[me] = value; renderEvents();
       try { applySnapshot(await api.post("rsvp", { id: e.id, who: me, value })); } catch (err) { fail(err); }
+    } else if (b.dataset.editRoster) {
+      const r = roster.find((x) => x.id === b.dataset.editRoster); if (r && r.id === me) startEdit(r);
     } else if (b.dataset.delRoster) {
       const r = roster.find((x) => x.id === b.dataset.delRoster);
-      if (r && confirmDelete(`Remove ${r.character} from the roster?`)) { try { applySnapshot(await api.post("deleteRoster", { id: r.id })); toast("Removed."); } catch (err) { fail(err); } }
+      if (r && r.id !== me) return;
+      if (r && confirmDelete(`Remove ${r.character} from the roster?`)) { try { applySnapshot(await api.post("deleteRoster", { id: r.id })); me = ""; try { localStorage.removeItem("forever.me"); } catch {} lastSnap = ""; renderRoster(); renderEvents(); toast("Removed."); } catch (err) { fail(err); } }
     } else if (b.dataset.delEvent) {
       const e = events.find((x) => x.id === b.dataset.delEvent);
-      if (e && confirmDelete(`Delete "${e.title}"?`)) { try { applySnapshot(await api.post("deleteEvent", { id: e.id })); toast("Event deleted."); } catch (err) { fail(err); } }
+      if (e && confirmDelete(`Delete "${e.title}"?`)) { try { applySnapshot(await api.post("deleteEvent", { id: e.id, who: me })); toast("Event deleted."); } catch (err) { fail(err); } }
+    } else if (b.dataset.view) {
+      view = b.dataset.view; try { localStorage.setItem("forever.view", view); } catch {} renderEvents();
+    } else if (b.dataset.cal) {
+      if (b.dataset.cal === "today") { const t = new Date(); calMonth = new Date(t.getFullYear(), t.getMonth(), 1); } else calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + Number(b.dataset.cal), 1);
+      calSel = ""; renderEvents();
+    } else if (b.dataset.day) {
+      const k = b.dataset.day, has = events.some((e) => e.date === k);
+      calSel = calSel === k ? "" : k;
+      if (!has) { // empty day: prefill the add-event form
+        const f = $("#addEvent"); f.elements.date.value = k; $("#eventToggle").setAttribute("aria-expanded", "true"); f.hidden = false; f.elements.title.focus();
+      }
+      renderEvents();
     }
   });
+  document.addEventListener("click", (ev) => { const a = ev.target.closest("a[data-cal-clear]"); if (a) { ev.preventDefault(); calSel = ""; renderEvents(); } });
   // two-click confirm instead of a blocking dialog
   let pending = null;
   function confirmDelete(msg) { if (pending === msg) { pending = null; return true; } pending = msg; toast(msg + " Click ✕ again to confirm."); setTimeout(() => { if (pending === msg) pending = null; }, 4000); return false; }
@@ -638,8 +815,6 @@ const POLL_MS = 12000;
   const dungeonsFor = (b) => DUNGEONS.filter((d) => b.raidWeek ? d.raid : (!d.raid && overlap(d, b) >= 3));
 
   let plan = { start: "2026-11-04", pace: 1, picks: {} };
-  const fmt = (dt) => dt.toLocaleDateString("en-US", { month:"short", day:"numeric" });
-  const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
   function bracketDates() {
     let cur = new Date(plan.start + "T12:00:00"); const out = [];
     for (const b of BRACKETS) { const s = new Date(cur); const e = new Date(cur); e.setDate(e.getDate() + Math.max(1, Math.round(b.days * plan.pace)) - (b.raidWeek ? 0 : 1)); out.push({ ...b, start:s, end:e }); cur = new Date(e); cur.setDate(cur.getDate() + 1); }
@@ -650,10 +825,11 @@ const POLL_MS = 12000;
     const today = new Date(); today.setHours(0,0,0,0);
     const rows = bracketDates();
     const last = rows[rows.length - 2];
-    $("#planCount").textContent = `60 around ${fmt(last.end)}`;
+    $("#planCount").textContent = `60 around ${fmt(last.end)}` + (medianLevel() ? ` · group is around Lv ${medianLevel()}` : "");
     $("#plan").innerHTML = rows.map((b) => {
       const picks = plan.picks[b.id] || [];
-      const state = b.end < today ? "past" : (b.start <= today ? "now" : "");
+      const ml = medianLevel();
+      const state = ml ? (b.raidWeek ? (ml >= 60 ? "now" : "") : (ml > b.hi ? "past" : ml >= b.lo ? "now" : "")) : (b.end < today ? "past" : (b.start <= today ? "now" : ""));
       const opts = dungeonsFor(b);
       return `<div class="bracket ${state}" data-b="${b.id}">
         <div class="lvl">${b.raidWeek ? "60" : `${b.lo}–${b.hi}`}<small><span class="when">${b.raidWeek ? fmt(b.start) + " →" : fmt(b.start) + (b.start.getTime() === b.end.getTime() ? "" : " – " + fmt(b.end))}</span></small>${b.art ? `<img class="zone" src="img/thumb/${b.art}.jpg" alt="" title="${esc(b.cap)}" loading="lazy">` : ""}</div>
@@ -696,7 +872,7 @@ const POLL_MS = 12000;
           const d = DUNGEONS.find((x) => x.name === name);
           const dup = events.some((e) => e.date === iso(row.start) && e.title.includes(name));
           if (dup) continue;
-          applySnapshot(await api.post("addEvent", { data: { title: `${row.raidWeek ? "Raid" : "Lv " + row.lo + "–" + row.hi} · ${name}`, date: iso(row.start), time: "", kind: d?.raid ? "Raid" : "Dungeon", notes: d?.isNew ? "New in Forever" + (d.est ? " (level range is our estimate)" : "") : "" } }));
+          applySnapshot(await api.post("addEvent", { who: me, data: { title: `${row.raidWeek ? "Raid" : "Lv " + row.lo + "–" + row.hi} · ${name}`, date: iso(row.start), time: "", kind: d?.raid ? "Raid" : "Dungeon", notes: d?.isNew ? "New in Forever" + (d.est ? " (level range is our estimate)" : "") : "" } }));
         }
         toast("Added to the schedule. Set a time and RSVP on the Roster & Schedule tab.");
       } catch (err) { fail(err); } finally { b.disabled = false; }
