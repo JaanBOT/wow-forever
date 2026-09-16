@@ -191,6 +191,15 @@
   /* Events */
   .who { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: 14px; }
   .who select { width: auto; flex: 1; }
+  .who .id { flex: 1; min-width: 0; }
+  .who .id b { color: var(--gold); }
+  .who .id a, .claim a { color: var(--gold); cursor: pointer; text-decoration: underline; }
+  .who .key { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; background: var(--gold-soft); padding: 1px 6px; border-radius: 3px; }
+  .claim { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .claim select { width: auto; flex: 1; min-width: 160px; }
+  .claim input { width: 150px; font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .claim button { padding: 5px 11px; font-size: 13px; }
+  .claim .sub { flex-basis: 100%; }
   .event { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); }
   .event:last-child { border-bottom: 0; }
   .event.past { opacity: .55; }
@@ -295,6 +304,7 @@
   .cal-day .more { font-size: 10px; color: var(--muted); }
   .cal-foot { font-size: 13px; color: var(--muted); margin-top: 8px; }
   @media (max-width: 560px) { .cal-day { min-height: 46px; padding: 3px; } .cal-ev { display: none; } .cal-day .more { display: none; } }
+  [hidden] { display: none !important; }
   html { background: var(--bg); }
 </style>
 </head>
@@ -398,9 +408,15 @@
       <h2>Schedule <span class="count" id="eventCount"></span></h2>
       <div class="panel">
         <div class="who">
-          <span>RSVP as</span>
-          <select id="who"><option value="">— pick your roster entry —</option></select>
+          <div class="id" id="identity">Loading…</div>
           <div class="viewtoggle" id="viewtoggle"><button data-view="list" class="on">List</button><button data-view="cal">Calendar</button></div>
+        </div>
+        <div class="claim" id="claim" hidden>
+          <select id="claimWho"></select>
+          <input id="claimKey" placeholder="Key" maxlength="9" autocomplete="off" hidden>
+          <button id="claimBtn" class="primary" type="button">This is me</button>
+          <button id="claimCancel" type="button">Cancel</button>
+          <span class="sub" id="claimNote"></span>
         </div>
         <div class="cal-view" id="calendar" hidden></div>
         <div id="events"><div class="empty">Loading events…</div></div>
@@ -506,7 +522,7 @@ const POLL_MS = 12000;
     async get() { const r = await fetch(API_URL, { cache: "no-store" }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); },
     async post(action, payload) {
       const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, ...payload }) });
-      const j = await r.json(); if (!j.ok) throw new Error(j.error || "save failed"); return j;
+      const j = await r.json(); if (!j.ok) { const e = new Error(j.error || "save failed"); e.server = true; throw e; } return j;
     },
   };
   let lastSnap = "";
@@ -520,7 +536,48 @@ const POLL_MS = 12000;
     if (s.plan && s.plan.settings) { const d = s.plan.settings; plan = { start: d.start || plan.start, pace: Number(d.pace) || 1, picks: d.picks || {} }; }
     renderRoster(); renderEvents(); if (typeof renderPlan === "function") renderPlan();
   }
+  // Identity: each roster entry you created (or claimed) on this browser has a secret key.
+  // The key is what lets you RSVP, edit, or delete as that character. Keep it to move devices.
+  let keys = {}; try { keys = JSON.parse(localStorage.getItem("forever.keys") || "{}") || {}; } catch {}
   let me = ""; try { me = localStorage.getItem("forever.me") || ""; } catch {}
+  if (me && !keys[me]) me = "";
+  const saveKeys = () => { try { localStorage.setItem("forever.keys", JSON.stringify(keys)); localStorage.setItem("forever.me", me); } catch {} };
+  const genKey = () => { const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", b = new Uint8Array(8); crypto.getRandomValues(b); const k = [...b].map((x) => A[x % A.length]).join(""); return k.slice(0, 4) + "-" + k.slice(4); };
+  const normKey = (k) => String(k || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^(.{4})(.{4})$/, "$1-$2");
+  let showKey = false;
+  function renderIdentity() {
+    const el = $("#identity"), r = roster.find((x) => x.id === me);
+    if (!db) { el.textContent = "Not connected to the sheet yet."; return; }
+    if (r) el.innerHTML = `You are <b>${esc(r.character)}</b> · <a data-showkey>${showKey ? `key <span class="key">${esc(keys[me])}</span>` : "show key"}</a> · <a data-switch>not you?</a>`;
+    else el.innerHTML = `<span class="sub">To RSVP: sign up below, or <a data-switch>pick your existing entry</a>.</span>`;
+  }
+  function renderClaim() {
+    const box = $("#claim"); if (box.hidden) return;
+    const sel = $("#claimWho"), cur = sel.value;
+    sel.innerHTML = `<option value="">— which one is you? —</option>` + roster.map((r) => `<option value="${r.id}">${esc(r.character)} (${esc(r.name)})${r.claimed ? "" : " · unclaimed"}</option>`).join("");
+    sel.value = roster.some((r) => r.id === cur) ? cur : "";
+    const r = roster.find((x) => x.id === sel.value);
+    $("#claimKey").hidden = !(r && r.claimed);
+    $("#claimNote").textContent = !r ? "Entries you created on this browser are remembered automatically. Use this if you're on a new device or signed up before keys existed."
+      : r.claimed ? `${r.character} already has a key. Enter it (shown under "show key" on the device that created it).`
+      : `${r.character} was made before keys existed. Claim it and this browser becomes its owner; nobody else can claim it after that.`;
+  }
+  $("#claimWho").addEventListener("change", renderClaim);
+  $("#claimCancel").addEventListener("click", () => { $("#claim").hidden = true; });
+  $("#claimBtn").addEventListener("click", async () => {
+    const id = $("#claimWho").value, r = roster.find((x) => x.id === id); if (!r || !db) return;
+    const btn = $("#claimBtn"); btn.disabled = true;
+    try {
+      if (r.claimed) {
+        const key = normKey($("#claimKey").value); if (key.length < 9) { toast("Enter the 8-character key."); return; }
+        await api.post("verifyKey", { id, key }); keys[id] = key;
+      } else {
+        const key = genKey(); applySnapshot(await api.post("claimRoster", { id, key })); keys[id] = key;
+      }
+      me = id; saveKeys(); $("#claim").hidden = true; $("#claimKey").value = ""; lastSnap = ""; renderRoster(); renderEvents();
+      toast(`You're ${r.character} on this device now.`);
+    } catch (e) { fail(e); } finally { btn.disabled = false; }
+  });
 
   const rosterById = () => Object.fromEntries(roster.map((r) => [r.id, r]));
   const medianLevel = () => { const lv = roster.map((r) => Number(r.level) || 0).filter((n) => n > 0).sort((a, b) => a - b); if (!lv.length) return 0; const m = lv.length >> 1; return lv.length % 2 ? lv[m] : Math.round((lv[m-1] + lv[m]) / 2); };
@@ -545,7 +602,7 @@ const POLL_MS = 12000;
       $("#profs").innerHTML = `<span class="lbl">Professions</span>` + PROFS.filter((p) => pc[p]).map((p) => `<span class="p" title="${esc(roster.filter((r) => (r.professions || []).includes(p)).map((r) => r.character).join(", "))}">${p} ×${pc[p]}</span>`).join("")
         + (missing.length ? `<span class="sub" style="margin-left:6px">Nobody crafting:</span>` + missing.map((p) => `<span class="p missing">${p}</span>`).join("") : "");
     }
-    if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Not connected to the sheet yet."}</td></tr>`; return; }
+    if (!roster.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">${db ? "The roster is empty. Add yourself below." : "Not connected to the sheet yet."}</td></tr>`; renderIdentity(); return; }
     tb.innerHTML = roster.map((r) => `
       <tr>
         <td><div class="char">${clsIcon(r.cls)}<span style="color:${CLASS_COLORS[r.cls] || "inherit"}">${esc(r.character)}</span>${r.id === me ? `<input class="lvl-in" type="number" min="1" max="60" value="${Number(r.level) || 1}" data-lvl="${r.id}" title="Your current level">` : (Number(r.level) > 0 ? `<span class="lv">Lv ${Number(r.level)}</span>` : "")}</div><div class="sub" style="padding-left:34px">${esc(r.name)}</div></td>
@@ -554,9 +611,8 @@ const POLL_MS = 12000;
         <td><div class="days">${DAYS.map((d) => `<span class="${(r.days || []).includes(d) ? "on" : ""}" title="${d}">${d[0]}</span>`).join("")}</div>${r.notes ? `<div class="sub">${esc(r.notes)}</div>` : ""}</td>
         <td>${r.id === me ? `<div class="rowbtns"><button class="edit" data-edit-roster="${r.id}" title="Edit your entry">✎</button><button class="del" data-del-roster="${r.id}" title="Remove ${esc(r.character)}">✕</button></div>` : ""}</td>
       </tr>`).join("");
-    const who = $("#who");
-    who.innerHTML = `<option value="">— pick your roster entry —</option>` + roster.map((r) => `<option value="${r.id}" ${r.id === me ? "selected" : ""}>${esc(r.character)} (${esc(r.name)})</option>`).join("");
-    if (me && !roster.some((r) => r.id === me)) { me = ""; who.value = ""; }
+    if (me && !roster.some((r) => r.id === me)) { me = ""; saveKeys(); }
+    renderIdentity(); renderClaim();
   }
 
   // ---- Group builder: fill tank/healer slots from ranked roles of everyone who's in ----
@@ -647,10 +703,13 @@ const POLL_MS = 12000;
   renderRoster(); renderEvents();
 
   // ---- Interactions ----
-  $("#who").addEventListener("change", (e) => { me = e.target.value; try { localStorage.setItem("forever.me", me); } catch {} lastSnap = ""; renderRoster(); renderEvents(); });
+  $("#identity").addEventListener("click", (e) => {
+    if (e.target.closest("[data-showkey]")) { showKey = !showKey; renderIdentity(); }
+    else if (e.target.closest("[data-switch]")) { $("#claim").hidden = false; renderClaim(); $("#claim").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  });
 
   const needDb = () => { if (!db) { toast("This page isn't connected to its sheet yet."); return false; } return true; };
-  const fail = (err) => { console.error(err); toast("That didn't save. Try again in a moment."); };
+  const fail = (err) => { console.error(err); toast(err && err.server && err.message ? err.message : "That didn't save. Try again in a moment."); };
 
   let editing = "";
   const resetSignup = () => { const f = $("#signup"); f.reset(); fillRaces(); rolePicks = []; renderRolePicks(); profPicks = []; renderProfPicks(); editing = ""; f.classList.remove("editing"); $("#signupBtn").textContent = "Add me to the roster"; };
@@ -676,11 +735,12 @@ const POLL_MS = 12000;
     btn.disabled = true;
     try {
       if (editing) {
-        applySnapshot(await api.post("updateRoster", { id: editing, data: doc }));
+        applySnapshot(await api.post("updateRoster", { id: editing, key: keys[editing], data: doc }));
         toast(`${doc.character} updated.`);
       } else {
-        const res = await api.post("addRoster", { data: doc });
-        me = res.id; try { localStorage.setItem("forever.me", me); } catch {}
+        const key = genKey();
+        const res = await api.post("addRoster", { data: doc, key });
+        me = res.id; keys[me] = key; saveKeys();
         applySnapshot(res); toast(`${doc.character} added to the roster.`);
       }
       resetSignup();
@@ -692,7 +752,7 @@ const POLL_MS = 12000;
     const r = roster.find((x) => x.id === inp.dataset.lvl); if (!r) return;
     const level = Math.max(1, Math.min(60, Number(inp.value) || 1)); inp.value = level;
     r.level = level; lastSnap = ""; renderRoster(); if (typeof renderPlan === "function") renderPlan();
-    try { applySnapshot(await api.post("updateRoster", { id: r.id, data: { ...r, level } })); toast(`Level ${level} saved.`); } catch (e) { fail(e); }
+    try { applySnapshot(await api.post("updateRoster", { id: r.id, key: keys[r.id], data: { ...r, level } })); toast(`Level ${level} saved.`); } catch (e) { fail(e); }
   });
 
   $("#addEvent").addEventListener("submit", async (ev) => {
@@ -701,7 +761,7 @@ const POLL_MS = 12000;
     const doc = { title: f.get("title").trim(), date: f.get("date"), time: (f.get("time") || "").trim(), kind: f.get("kind"), notes: (f.get("notes") || "").trim(), rsvps: {}, createdAt: new Date().toISOString() };
     if (!doc.title || !doc.date) return;
     btn.disabled = true;
-    try { applySnapshot(await api.post("addEvent", { data: doc, who: me })); ev.target.reset(); toast("Event added."); }
+    try { applySnapshot(await api.post("addEvent", { data: doc, who: me, key: keys[me] })); ev.target.reset(); toast("Event added."); }
     catch (e) { fail(e); } finally { btn.disabled = false; }
   });
 
@@ -714,16 +774,16 @@ const POLL_MS = 12000;
       const value = cur === b.dataset.v ? "none" : b.dataset.v;
       // optimistic update, then sync
       e.rsvps = { ...(e.rsvps || {}) }; if (value === "none") delete e.rsvps[me]; else e.rsvps[me] = value; renderEvents();
-      try { applySnapshot(await api.post("rsvp", { id: e.id, who: me, value })); } catch (err) { fail(err); }
+      try { applySnapshot(await api.post("rsvp", { id: e.id, who: me, key: keys[me], value })); } catch (err) { fail(err); lastSnap = ""; refresh(); }
     } else if (b.dataset.editRoster) {
       const r = roster.find((x) => x.id === b.dataset.editRoster); if (r && r.id === me) startEdit(r);
     } else if (b.dataset.delRoster) {
       const r = roster.find((x) => x.id === b.dataset.delRoster);
       if (r && r.id !== me) return;
-      if (r && confirmDelete(`Remove ${r.character} from the roster?`)) { try { applySnapshot(await api.post("deleteRoster", { id: r.id })); me = ""; try { localStorage.removeItem("forever.me"); } catch {} lastSnap = ""; renderRoster(); renderEvents(); toast("Removed."); } catch (err) { fail(err); } }
+      if (r && confirmDelete(`Remove ${r.character} from the roster?`)) { try { applySnapshot(await api.post("deleteRoster", { id: r.id, key: keys[r.id] })); delete keys[r.id]; me = ""; saveKeys(); lastSnap = ""; renderRoster(); renderEvents(); toast("Removed."); } catch (err) { fail(err); } }
     } else if (b.dataset.delEvent) {
       const e = events.find((x) => x.id === b.dataset.delEvent);
-      if (e && confirmDelete(`Delete "${e.title}"?`)) { try { applySnapshot(await api.post("deleteEvent", { id: e.id, who: me })); toast("Event deleted."); } catch (err) { fail(err); } }
+      if (e && confirmDelete(`Delete "${e.title}"?`)) { try { applySnapshot(await api.post("deleteEvent", { id: e.id, who: me, key: keys[me] })); toast("Event deleted."); } catch (err) { fail(err); } }
     } else if (b.dataset.view) {
       view = b.dataset.view; try { localStorage.setItem("forever.view", view); } catch {} renderEvents();
     } else if (b.dataset.cal) {
@@ -872,7 +932,7 @@ const POLL_MS = 12000;
           const d = DUNGEONS.find((x) => x.name === name);
           const dup = events.some((e) => e.date === iso(row.start) && e.title.includes(name));
           if (dup) continue;
-          applySnapshot(await api.post("addEvent", { who: me, data: { title: `${row.raidWeek ? "Raid" : "Lv " + row.lo + "–" + row.hi} · ${name}`, date: iso(row.start), time: "", kind: d?.raid ? "Raid" : "Dungeon", notes: d?.isNew ? "New in Forever" + (d.est ? " (level range is our estimate)" : "") : "" } }));
+          applySnapshot(await api.post("addEvent", { who: me, key: keys[me], data: { title: `${row.raidWeek ? "Raid" : "Lv " + row.lo + "–" + row.hi} · ${name}`, date: iso(row.start), time: "", kind: d?.raid ? "Raid" : "Dungeon", notes: d?.isNew ? "New in Forever" + (d.est ? " (level range is our estimate)" : "") : "" } }));
         }
         toast("Added to the schedule. Set a time and RSVP on the Roster & Schedule tab.");
       } catch (err) { fail(err); } finally { b.disabled = false; }
@@ -880,10 +940,10 @@ const POLL_MS = 12000;
   });
 
   // ---- Live data ----
+  const refresh = async () => { try { applySnapshot(await api.get()); } catch (e) { console.error(e); } };
   (async () => {
     if (!API_URL) { $("#setup").hidden = false; renderRoster(); renderEvents(); return; }
     db = true;
-    const refresh = async () => { try { applySnapshot(await api.get()); } catch (e) { console.error(e); } };
     await refresh();
     setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });

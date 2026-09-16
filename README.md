@@ -18,7 +18,7 @@ A shared sign-up sheet and event schedule for our friend group ahead of
 - `README.md` — this file
 
 ## Data model (Google Sheet tabs)
-- `roster` — one row per player: name, character, faction, race, cls, roles (ranked), time, days, notes, professions (up to 2), level
+- `roster` — one row per player: name, character, faction, race, cls, roles (ranked), time, days, notes, professions (up to 2), level, keyHash (never sent to clients; `claimed` boolean is)
 - `events` — one row per event: title, date, time, kind, notes, rsvps {rosterId: yes|maybe|no}, createdBy (roster id)
 - `plan`   — key/value; `settings` holds { start, pace, picks }
 
@@ -28,7 +28,8 @@ A shared sign-up sheet and event schedule for our friend group ahead of
 - **Professions**: up to two per character; the roster shows coverage and which crafting professions nobody has.
 - **Group builder**: every dungeon/raid event shows Tank/Healer/DPS slots filled from the ranked roles of everyone who's "in" (5-man 1/1/3, 10-man 2/2/6, 20-man 2/5/13, 40-man 4/10/26) and what's still missing.
 - **Calendar**: List/Calendar toggle on the schedule. Click a day to filter to it; click an empty day to start an event on that date.
-- **Delete protection**: roster rows can only be removed by their owner (client-side); events only by whoever created them (enforced in Code.gs; events made before this rule stay deletable by anyone).
+- **Ownership keys**: no accounts. Each roster entry stores a SHA-256 hash of a secret key that only the creating browser holds (localStorage `forever.keys`). RSVP, edit, level, delete, and event deletion all send the key and Code.gs refuses without it. "show key" reveals your key so you can enter it on another device via "not you? → pick your existing entry". Entries made before keys existed show as *unclaimed* and the first browser to claim one owns it.
+- **Delete protection**: events remember their creator; only that person (with their key) can delete them. Events made before this rule stay deletable by anyone.
 
 ## Leveling Plan tab
 Level brackets from 1 to 60 with target dates computed from a shared start date and pace
